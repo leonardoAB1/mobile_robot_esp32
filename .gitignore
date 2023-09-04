@@ -1,0 +1,12 @@
+# Ignore directories
+.devcontainer/
+.vscode/
+build/
+components/
+
+# Ignore specific files
+CMakeLists.txt
+dependencies.lock
+README.md
+sdkconfig
+sdkconfig.old
