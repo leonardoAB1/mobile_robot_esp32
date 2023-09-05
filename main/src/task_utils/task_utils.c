@@ -96,18 +96,23 @@ void MotorDefaultControlTask(void *pvParameters){
 
 void Encoder1ProcessingTask(void *pvParameters) {
     // Initialize variables
-    uint64_t lastTime = esp_timer_get_time(); // Use a hardware timer for time measurement
     uint8_t prevPhaseA = get_phaseA(&encoder1);
     uint8_t prevPhaseB = get_phaseB(&encoder1);
-    int32_t position = 0;
-    int32_t speed = 0;
+
+    uint64_t prevTime = esp_timer_get_time(); 
+    uint64_t elapsedTime = 0;
+    
+    int32_t currentPosition  = 0;
+    int32_t prevPosition = 0;
+
+    uint8_t counter = 0;
 
     while (1) {
         int8_t delta = 0;
         if (xSemaphoreTake(encoder1Semaphore, portMAX_DELAY) == pdTRUE) {
-            // Measure time using a hardware timer
-            uint64_t currentTime = esp_timer_get_time();
-            uint64_t elapsedTime = currentTime - lastTime;
+            //////////////////////////////////////////////////////////////////////////
+            /////////////////////////////update position//////////////////////////////
+            //////////////////////////////////////////////////////////////////////////
             uint8_t PhaseA = gpio_get_level(FASE_A);
             uint8_t PhaseB = gpio_get_level(FASE_B);
 
@@ -119,31 +124,43 @@ void Encoder1ProcessingTask(void *pvParameters) {
             set_phaseB(&encoder1, PhaseB);
 
             // Update position based on delta
-            position = get_position(&encoder1) + delta;
-            set_position(&encoder1, position);
+            currentPosition = get_position(&encoder1) + delta;
+            set_position(&encoder1, currentPosition);
 
             // Check for position limits
             int32_t stepsPerRevolution = get_stepsPerRevolution(&encoder1);
-            if (position >= stepsPerRevolution || position <= -stepsPerRevolution) {
+            if (currentPosition >= stepsPerRevolution || currentPosition <= -stepsPerRevolution) {
                 set_position(&encoder1, 0);
             }
+            prevPhaseA = PhaseA;
+            prevPhaseB = PhaseB;
+            counter += delta;
+            //////////////////////////////////////////////////////////////////////////
+            //////////////////////////////update speed////////////////////////////////
+            //////////////////////////////////////////////////////////////////////////
+            if ((delta!=0)&(counter>=2)){
+                // Measure time using a hardware timer
+                uint64_t currentTime = esp_timer_get_time(); // Use a hardware timer for time measurement
+                elapsedTime = currentTime - prevTime;
+                prevTime = currentTime;
 
-            // Calculate position change
-            float positionChange = get_positionDegrees(&encoder1) - get_previousPositionDegrees(&encoder1);
-            if (elapsedTime > 0){
-                if (delta != 0) {
-                // Calculate speed based on pulses per unit time
-                speed = (positionChange * 1000000 * 60) / (elapsedTime * 360); // microseconds
+                // Calculate position change
+                float positionChange = fabs(currentPosition - prevPosition);
+                float speed = (positionChange * get_degreesPerStep(&encoder1) * 1000000 * 60) / (elapsedTime * 360);
                 set_speed(&encoder1, speed);
+
+                // Update the previous position
+                prevPosition = currentPosition; 
+                //////////////////////////////////////////////////////////////////////////
+                /////////////////////////////Log Message//////////////////////////////////
+                ESP_LOGI(TASK_LOG_TAG, "SPEED:%f,POSITION:%f", get_speed(&encoder1), get_positionDegrees(&encoder1));
+                //////////////////////////////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////////
+                //////////////////////////////////////////////////////////////////////////
             }
             else{
                 set_speed(&encoder1, 0);
             }
-            lastTime = currentTime;
-            }
-            prevPhaseA = PhaseA;
-            prevPhaseB = PhaseB;
-            ESP_LOGI(TASK_LOG_TAG, "SPEED:%ld,POSITION:%f,ELAPSED TIME:%llu", get_speed(&encoder1), get_positionDegrees(&encoder1), elapsedTime);
         }
     }
 }

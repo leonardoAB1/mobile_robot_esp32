@@ -50,8 +50,8 @@ float get_positionDegrees(const Encoder *encoder);
 
 float get_previousPositionDegrees(const Encoder *encoder);
 
-void set_speed(Encoder *encoder, int32_t speed);
-int32_t get_speed(const Encoder *encoder);
+void set_speed(Encoder *encoder, float speed);
+float get_speed(const Encoder *encoder);
 
 void set_direction(Encoder *encoder, uint8_t new_direction);
 uint8_t get_direction(const Encoder *encoder);

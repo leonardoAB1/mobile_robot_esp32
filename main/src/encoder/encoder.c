@@ -54,10 +54,6 @@ float get_degreesPerStep(const Encoder *encoder) {
 
 // Setter for position
 void set_position(Encoder *encoder, int16_t position) {
-    //save  position as previous position
-    encoder->positionDegrees[1]=encoder->positionDegrees[0];
-    encoder->position[1]=encoder->position[0];  
-    //update new position
     encoder->positionDegrees[0] = (encoder->degreesPerStep)*position;
     encoder->position[0] = position;
 }
@@ -78,13 +74,13 @@ float get_previousPositionDegrees(const Encoder *encoder){
 }
 
 // Setter for speed
-void set_speed(Encoder *encoder, int32_t speed){
+void set_speed(Encoder *encoder, float speed){
     encoder->speed[1]=encoder->speed[0];
     encoder->speed[0] = speed;
 }
 
 // Getter for speed
-int32_t get_speed(const Encoder *encoder) {
+float get_speed(const Encoder *encoder) {
     return encoder->speed[0];
 }
 
