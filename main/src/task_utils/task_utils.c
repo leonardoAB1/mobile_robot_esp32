@@ -99,16 +99,16 @@ void Encoder1ProcessingTask(void *pvParameters) {
     uint8_t prevPhaseA = get_phaseA(&encoder1);
     uint8_t prevPhaseB = get_phaseB(&encoder1);
 
-    uint64_t prevTime = esp_timer_get_time(); 
-    uint64_t elapsedTime = 0;
+    uint64_t prevTime = 0; 
     
     int32_t currentPosition  = 0;
     int32_t prevPosition = 0;
 
-    uint8_t counter = 0;
+    uint64_t counter = 0;
 
     while (1) {
         int8_t delta = 0;
+        uint64_t currentTime = esp_timer_get_time(); // Use a hardware timer for time measurement
         if (xSemaphoreTake(encoder1Semaphore, portMAX_DELAY) == pdTRUE) {
             //////////////////////////////////////////////////////////////////////////
             /////////////////////////////update position//////////////////////////////
@@ -134,26 +134,22 @@ void Encoder1ProcessingTask(void *pvParameters) {
             }
             prevPhaseA = PhaseA;
             prevPhaseB = PhaseB;
-            counter += delta;
+            counter += abs(delta);
             //////////////////////////////////////////////////////////////////////////
             //////////////////////////////update speed////////////////////////////////
             //////////////////////////////////////////////////////////////////////////
-            if ((delta!=0)&(counter>=2)){
-                // Measure time using a hardware timer
-                uint64_t currentTime = esp_timer_get_time(); // Use a hardware timer for time measurement
-                elapsedTime = currentTime - prevTime;
-                prevTime = currentTime;
-
+            // Calculate speed by counting the pulses during a second
+            if (currentTime - prevTime >= 1000000){
                 // Calculate position change
-                float positionChange = fabs(currentPosition - prevPosition);
-                float speed = (positionChange * get_degreesPerStep(&encoder1) * 1000000 * 60) / (elapsedTime * 360);
+                float speed = (counter*60)/get_stepsPerRevolution(&encoder1); //((step/s)/(steps/rev))*60s=rpm
                 set_speed(&encoder1, speed);
-
-                // Update the previous position
-                prevPosition = currentPosition; 
+                // Measure time using a hardware timer
+                prevTime = currentTime;
+                // Reboot step counter
+                counter = 0;
                 //////////////////////////////////////////////////////////////////////////
                 /////////////////////////////Log Message//////////////////////////////////
-                ESP_LOGI(TASK_LOG_TAG, "SPEED:%f,POSITION:%f", get_speed(&encoder1), get_positionDegrees(&encoder1));
+                ESP_LOGI(TASK_LOG_TAG, "SPEED:%f RPM, POSITION:%f°", speed, get_positionDegrees(&encoder1));
                 //////////////////////////////////////////////////////////////////////////
                 //////////////////////////////////////////////////////////////////////////
                 //////////////////////////////////////////////////////////////////////////
