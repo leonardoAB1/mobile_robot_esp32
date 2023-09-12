@@ -90,7 +90,7 @@ void MotorDefaultControlTask(void *pvParameters){
         //ESP_LOGI(TASK_LOG_TAG, "PWM:%u,DIRECTION:%u", mappedState, direction);
 
         // Add a delay here if needed to control the task execution rate
-        vTaskDelay(pdMS_TO_TICKS(100)); // Example: 100 ms delay
+        vTaskDelay(pdMS_TO_TICKS(10)); // Example: 10 ms delay
     }
 }
 
@@ -139,9 +139,9 @@ void Encoder1ProcessingTask(void *pvParameters) {
             //////////////////////////////update speed////////////////////////////////
             //////////////////////////////////////////////////////////////////////////
             // Calculate speed by counting the pulses during a second
-            if (currentTime - prevTime >= 1000000){
+            if (currentTime - prevTime >= 1e6){
                 // Calculate position change
-                float speed = (counter*60)/get_stepsPerRevolution(&encoder1); //((step/s)/(steps/rev))*60s=rpm
+                float speed = ((counter/((currentTime - prevTime)*1e-6))*60)/get_stepsPerRevolution(&encoder1); //((step/s)/(steps/rev))*(60s/1min)=rpm
                 set_speed(&encoder1, speed);
                 // Measure time using a hardware timer
                 prevTime = currentTime;
