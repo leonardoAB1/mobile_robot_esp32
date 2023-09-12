@@ -33,11 +33,19 @@ esp_err_t handle_set_reference(httpd_req_t *req)
         httpd_resp_send_err(req, HTTPD_405_METHOD_NOT_ALLOWED, "Method Not Allowed");
         return ESP_OK;
     }
+    // Extract the value of the controller header
+    char controller[32];
+    if (httpd_req_get_hdr_value_str(req, "Controller", controller, sizeof(controller)) == ESP_OK) {
+        ControlStrategy = (strcmp(controller, "PID") == 0) ? PID_CONTROLLER : (strcmp(controller, "DEFAULT") == 0) ? OPEN_LOOP : INVALID_CONTROLLER;
+    } else {
+        // Handle the case where the "Controller" header is not present in the request
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad Request");
+        return ESP_OK;
+    }
 
     // Extract the value of the Adc-Resolution header
     char adcResolution[32];
-    size_t headerLen = sizeof(adcResolution);
-    httpd_req_get_hdr_value_str(req, "Adc-Resolution", adcResolution, headerLen);
+    httpd_req_get_hdr_value_str(req, "Adc-Resolution", adcResolution, sizeof(adcResolution));
     // Convert char array to int
     uint8_t AdcResolution = atoi(adcResolution);
 
@@ -85,7 +93,8 @@ esp_err_t handle_set_reference(httpd_req_t *req)
 
     uint32_t referenceSignal = valueObj->valueint;
 
-    // Process the referenceSignal using the AdcResolution
+    if (ControlStrategy==OPEN_LOOP){
+        // Process the referenceSignal using the AdcResolution
     uint32_t maxOriginalValue = (1 << AdcResolution) - 1;       // Calculate the maximum value of the original range
     float ratio = 100.0 / maxOriginalValue;                     // Calculate the ratio for mapping
 
@@ -93,8 +102,20 @@ esp_err_t handle_set_reference(httpd_req_t *req)
 
     setReferenceState(mappedValue);                             //set reference to float from 0 to 100
 
+    } else if (ControlStrategy==PID_CONTROLLER){
+        //Speed Saturation
+        if (referenceSignal > 250) {
+            referenceSignal = 250;
+        }
+        else if (referenceSignal < 0) {
+            referenceSignal = 0;
+        }
+        setReferenceState(referenceSignal); 
+    }
+    
+
     // Log the updated value
-    ESP_LOGI(CONTROL_TAG, "Value updated: %.2f", mappedValue);  // Log the mapped value with two decimal places
+    ESP_LOGI(CONTROL_TAG, "Value updated: %.2f", getReferenceState());  // Log the mapped value with two decimal places
 
     // Cleanup
     cJSON_Delete(json);

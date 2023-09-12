@@ -16,13 +16,14 @@
 #include "../motor_control/motor_control.h"
 #include "../encoder/encoder.h"
 #include "../logging/logging_utils.h"
+#include "../http_handlers/http_handlers.h"
 
 #ifdef ENABLE_BLE
 #include "../ble_utils/ble_utils.h"
 #endif
 
 // Define the stack depth and priority for the Default Control Task
-#define TASK_MOTOR_DEFAULT_CONTROL_STACK_DEPTH 2048 
+#define TASK_MOTOR_DEFAULT_CONTROL_STACK_DEPTH 2048*3
 #define TASK_MOTOR_DEFAULT_CONTROL_PRIORITY tskIDLE_PRIORITY+10
 #define TASK_MOTOR_DEFAULT_CONTROL_CORE 1
 
@@ -34,7 +35,7 @@
 #endif /* ENABLE_BLE */
 
 // Define the stack depth and priority for the Default Control Task
-#define ENCODER1_STACK_DEPTH 2048 
+#define ENCODER1_STACK_DEPTH 2048*3
 #define TASK_ENCODER1_PRIORITY tskIDLE_PRIORITY+8
 #define ENCODER1_CORE 0
 #define LOG_INTERVAL_MS 1
@@ -54,7 +55,7 @@ typedef struct
 //Declare task params structure
 typedef struct
 {
-    MotorAngles_t* motorAnglesQueue;
+    QueueHandle_t param1;
 } TaskParams_t;
 
 /**
@@ -87,6 +88,7 @@ extern Motor motor1;
 extern Motor motor2;
 extern float_t referenceState;
 extern Encoder encoder1;
+extern uint8_t ControlStrategy;
 
 #endif /* _TASKS_H_ */
 

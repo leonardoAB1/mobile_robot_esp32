@@ -39,6 +39,7 @@ esp_err_t handle_get_encoder(httpd_req_t *req);
 extern Motor motor1;
 extern Motor motor2;
 extern Encoder encoder1;
+extern uint8_t ControlStrategy;
 
 #endif  // HTTP_HANDLERS_H
 

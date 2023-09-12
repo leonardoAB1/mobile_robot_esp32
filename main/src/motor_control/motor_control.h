@@ -31,6 +31,11 @@
 
 #define SERVO_MAX_ANGLE 180
 
+//Control Strategy
+#define INVALID_CONTROLLER -1
+#define OPEN_LOOP 0
+#define PID_CONTROLLER 1
+
 #define MOTOR_CHECK(a, str, ret_val) \
     if (!(a)) { \
         ESP_LOGE(MOTOR_TAG, "%s(%d): %s", __FUNCTION__, __LINE__, str); \

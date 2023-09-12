@@ -9,6 +9,8 @@
  *******************************************************************************/
 #include "../motor_control/motor_control.h"
 
+uint8_t ControlStrategy = OPEN_LOOP;
+
 Motor create_motor(ledc_mode_t speed_mode, uint8_t channel) {
     Motor motor;
     motor.speed_mode = speed_mode;

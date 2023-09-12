@@ -19,7 +19,7 @@ void checkGPIOState(uint8_t currentState, volatile uint8_t* stateVariable);
 // Setter function
 void setReferenceState(float_t state);
 // Getter functions
-uint8_t getReferenceState(void);
+float_t getReferenceState(void);
 
 #endif /* GPIO_STATE_H_ */
 

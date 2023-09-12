@@ -23,7 +23,7 @@ void checkGPIOState(uint8_t currentState, volatile uint8_t* stateVariable) {
 }
 
 // Getter functions for input reference's state AKA reference
-uint8_t getReferenceState(void) {
+float_t getReferenceState(void) {
     return referenceState;
 }
 

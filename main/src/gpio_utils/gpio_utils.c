@@ -94,7 +94,7 @@ esp_err_t init_isr(void)
 void IRAM_ATTR update_encoder_isr(void* arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(encoder1Semaphore, &xHigherPriorityTaskWoken);
+    xSemaphoreGiveFromISR(encoder1Binary, &xHigherPriorityTaskWoken);
 
     if (xHigherPriorityTaskWoken == pdTRUE) {
         portYIELD_FROM_ISR();

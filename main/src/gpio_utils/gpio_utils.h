@@ -103,7 +103,7 @@ esp_err_t init_isr(void);
 void update_encoder_isr(void* arg);
 
 extern Encoder encoder1;
-extern SemaphoreHandle_t encoder1Semaphore;
+extern SemaphoreHandle_t encoder1Binary;
 
 #endif /* GPIO_UTILS_H_ */
 
