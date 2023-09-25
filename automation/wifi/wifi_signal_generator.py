@@ -15,7 +15,7 @@ class Scope:
         self.ydata = [0]
         self.line = Line2D(self.tdata, self.ydata)
         self.ax.add_line(self.line)
-        self.ax.set_ylim(0, 2 ** adc_bit_number-1)
+        self.ax.set_ylim(-200, 200)
         self.ax.set_xlim(0, self.maxt)
         self.ax.grid()
         self.ax.grid(color='green', linestyle='--', linewidth=0.5)
@@ -66,6 +66,7 @@ class Scope:
                 "Accept": "*/*",
                 "User-Agent": "Thunder Client (https://www.thunderclient.com)",
                 "Adc-Resolution": f"{adc_bit_number}",
+                "Controller": "PID",
                 "Content-Type": "application/json"
             }
             
@@ -75,7 +76,7 @@ class Scope:
                 })
                 response = requests.request("POST", req_url, data=payload, headers=headers_list, timeout=3)
                 if response.status_code == 200:
-                    print("POST request successful:", response.text)
+                    print(f"POST request successful: {y} ", response.text)
                 else:
                     print("POST request failed with status code:", response.status_code)
 
@@ -94,6 +95,18 @@ def sine_wave_generator(amplitude, period, phase, offset=0):
 
         yield offset + amplitude * np.sin(2 * np.pi * t / period + phase)
 
+def step_wave_generator(amplitude, period, offset=0):
+    start_time = time.time()  # Record the start time
+    while True:
+        current_time = time.time()  # Get the current time
+        elapsed_time = current_time - start_time  # Calculate elapsed time
+        t = elapsed_time  # Use elapsed time as the time parameter
+        # Implement the step function logic
+        if t % period <= period / 2:
+            yield offset + amplitude
+        else:
+            yield offset
+
 def toggle_data_flag(event):
     global send_data_flag
     if event.key == 'a':
@@ -101,19 +114,20 @@ def toggle_data_flag(event):
 
 if __name__ == "__main__":
     send_data_flag = 0
-    adc_bit_number = 16
+    adc_bit_number = 10
 
-    amplitude = (2 ** adc_bit_number-1)/2
+    amplitude = 150
     f = 1
     period = 20
     phase = 0.0
-    offset = amplitude
+    offset = 0
 
     fig, ax = plt.subplots()
     fig.patch.set_facecolor("#242424")
     scope = Scope(ax)
 
     sine_gen = sine_wave_generator(amplitude, period, phase, offset)
+    step_gen = step_wave_generator(amplitude, period)
 
     ani = animation.FuncAnimation(fig, scope.update, sine_gen,  interval=50,
                                 blit=True, repeat=True, cache_frame_data=False)  # Set repeat to True
