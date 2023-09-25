@@ -8,6 +8,10 @@
  *
  *******************************************************************************/
 #include "../task_utils/task_utils.h"
+#define Ts 1e-3
+#define Kp 0.228
+#define Ki 2.1
+#define Kd 0.0001
 
 BaseType_t result;         // Define result globally
 
@@ -59,111 +63,104 @@ void initialize_tasks(void)
     ESP_LOGI(TASK_LOG_TAG, "Tasks Initialized");
 }
 
-void MotorDefaultControlTask(void *pvParameters){
+// Constants for the EWMA filter
+#define EWMA_ALPHA 0.15 // Adjust this value to control the filter's smoothing effect
+#define EWMA_ALPHA_2 0.2
+
+float_t filterEWMA(float_t newValue, float_t oldValue, float_t alpha) {
+    return alpha * newValue + (1 - alpha) * oldValue;
+}
+
+void MotorDefaultControlTask(void *pvParameters) {
     TaskParams_t* params = (TaskParams_t*) pvParameters;
     QueueHandle_t speedQueue = params->param1;
 
-	uint8_t direction = 0;
-	uint16_t duty_cycle = 0;
-    //Parametros del controlador
-    uint64_t prevTime = 0; 
-    uint8_t fs= 10;
-    float Ts= 1/fs;
-    //////////////////////////
-    uint16_t kp=1;
-    uint16_t Td=0;
-    uint16_t Ti=0;
-    uint16_t q0=2*kp*Ti*Ts;
-    uint16_t q1=Ts*2*kp;
-    uint16_t q2=4*Td*Ti*kp;
-    uint16_t q3=2*Ts*Ti;
+    uint8_t direction = 0;
+    uint16_t duty_cycle = 0;
 
-    float e[3] = {0.0, 0.0, 0.0};; //control error   e[0]=e(k) e[1]=e(k-1) e[2]=e(k-2)
-    float u[3] = {0.0, 0.0, 0.0};; //control output  u[0]=u(k) u[1]=u(k-1) u[2]=u(k-2)
-    float y[2] = {0.0, 0.0};;      //speed           y[0]=y(k) y[1]=y(k-1)
+    // Controller parameters
+    uint64_t prevTime = 0;
 
-	while (1) {
-        //////////////////////////////////////////////////////////////////////////
-        /////////////////////////////Open Loop System/////////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //referenceState goes from 0 to 100 %
-        if (ControlStrategy==OPEN_LOOP){
-            if (referenceState >= 0 && referenceState <= 49) {
-            direction = 1;
-            // Map referenceState from 1 to (2**PWM_RESOLUTION) - 1
-            float mappedValue = (float)referenceState / 49.0 * (pow(2, PWM_RESOLUTION) - 1);
-            duty_cycle = (uint16_t)round(mappedValue);
-            if (duty_cycle == 0) {
-                duty_cycle = 1; // Ensure mapped value is at least 1
-            }
-            } else if (referenceState >= 51 && referenceState <= 100) {
-                direction = 0; 
-                // Map referenceState from 1 to (2**PWM_RESOLUTION) - 1
-                float mappedValue = ((float)(referenceState - 51) / 49.0) * (pow(2, PWM_RESOLUTION) - 1);
-                duty_cycle = (uint16_t)round(mappedValue);
-                if (duty_cycle == 0) {
-                    duty_cycle = 1; // Ensure mapped value is at least 1
-                }
-            } else if (referenceState == 50) {
-                duty_cycle = 0;
-            }
+    // Control variables
+    float_t e[3] = {0.0, 0.0, 0.0};
+    float_t u[3] = {0.0, 0.0, 0.0};
+    float_t y[2] = {0.0, 0.0};
 
-        //////////////////////////////////////////////////////////////////////////
-        /////////////////////////////PID ISA Controller///////////////////////////
-        //////////////////////////////////////////////////////////////////////////
-        //referenceState is a RPM value
-        } else if (ControlStrategy==PID_CONTROLLER){
-            uint64_t currentTime = esp_timer_get_time();
-            if ((currentTime - prevTime)*1e-6 > Ts) {  //Refresh rate of the controller
-                //check value of speed in encoder1 using get_speed(&encoder1, 0);
-                xSemaphoreTake(encoder1Semaphore, portMAX_DELAY);
-                if (xQueuePeek(speedQueue, &y[0], 0) == pdTRUE) {
-                    xQueueReceive(speedQueue, &y[0], pdMS_TO_TICKS(100));
-                }
+    while (1) {
+        uint64_t currentTime = esp_timer_get_time();
 
-                //Calculate error
-                e[0] = referenceState - y[0];
-
-                //PID ISA Controller
-                u[0]=((q0+q1+q2)/q3)*e[0]+2*((q1-q2)/q3)*e[1]+((q2+q1-q0)/q3)*e[2]+u[2];
-                
-                //Control Signal Saturation
-                if (u[0] > SERVO_FULL_DUTY) {
-                    u[0] = SERVO_FULL_DUTY;
-                }
-                else if (u[0] < 0) {
-                    u[0] = 0;
-                }
-                //Enviar señal de control
-                duty_cycle = u[0];
-
-                //Save actual data as previous data
-                prevTime = currentTime;
-                u[2] = u[1];
-                e[2] = e[1];
-                u[1] = u[0];
-                e[1] = e[0];
-                y[1] = y[0];
-
-                xSemaphoreGive(encoder1Semaphore);
-            }
-        }
-        //set duty cycle
-        xSemaphoreTake(motor1Semaphore, portMAX_DELAY);
-        move_motor(&motor1, duty_cycle, direction);
-        xSemaphoreGive(motor1Semaphore);
-        //log values
+        xSemaphoreTake(encoder1Semaphore, portMAX_DELAY);
         if (xQueuePeek(speedQueue, &y[0], 0) == pdTRUE) {
             xQueueReceive(speedQueue, &y[0], pdMS_TO_TICKS(100));
         }
+        xSemaphoreGive(encoder1Semaphore);
+        // Apply EWMA filter
+        y[0] = filterEWMA(y[0], y[1], EWMA_ALPHA);
+        y[0] = filterEWMA(y[0], y[1], EWMA_ALPHA_2);
+        y[0] = roundToDecimal(y[0], 0);
 
+        // Map referenceState to duty_cycle for open-loop control
+        if (ControlStrategy == OPEN_LOOP) {
+            if (referenceState >= 0 && referenceState <= 100) {
+                if (referenceState == 50) {
+                    duty_cycle = 0;
+                } else {
+                    direction = (referenceState <= 49) ? 1 : 0;
+                    // Map referenceState from 1 to (2^PWM_RESOLUTION) - 1
+                    float mappedValue = ((float)(referenceState - (direction ? 0 : 51)) / 49.0) * (pow(2, PWM_RESOLUTION) - 1);
+                    duty_cycle = (uint16_t)round(mappedValue);
+                    if (duty_cycle < 1) {
+                        duty_cycle = 1; // Ensure mapped value is at least 1
+                    }
+                }
+            }
+        }
+        // PID Controller for closed-loop control
+        else if (ControlStrategy == PID_CONTROLLER) {
+            if ((currentTime - prevTime) * 1e-6 > Ts) {  // Refresh rate of the controller
+                direction = (referenceState <= 0) ? 1 : 0;
+                
+                // Calculate error
+                e[0] = fabs(referenceState) - y[0];
+
+                // PID Controller
+                u[0] = u[1] + Kp * (e[0] - e[1]) + Ki * Ts * e[0] + (Kd / Ts) * (e[0] - 2 * e[1] + e[2]);
+
+                // Control Signal Saturation
+                if (u[0] > 100) {
+                    u[0] = 100;
+                } else if (u[0] < 0) {
+                    u[0] = 0;
+                }
+
+                // Calculate duty_cycle
+                duty_cycle = (u[0] / 100) * SERVO_FULL_DUTY;
+            }
+        }
+
+        // Save actual data as previous data
+        prevTime = currentTime; // Store the current time regardless of control strategy
+        u[2] = u[1];
+        e[2] = e[1];
+        u[1] = u[0];
+        e[1] = e[0];
+        y[1] = y[0];
+
+        // Set duty cycle
+        xSemaphoreTake(motor1Semaphore, portMAX_DELAY);
+        move_motor(&motor1, duty_cycle, direction);
+        xSemaphoreGive(motor1Semaphore);
+
+        y[0]= (direction==0)? y[0] : -y[0];
+
+        // Log values
         ESP_LOGI(TASK_LOG_TAG, "SPEED:%f,REFERENCE:%f,CONTROL:%f,ERROR:%f", y[0], referenceState, u[0], e[0]);
-        
 
-        // Add a delay here if needed to control the task execution rate
-        vTaskDelay(pdMS_TO_TICKS(100)); // Example: 10 ms delay
+        // Delay for task execution rate control
+        vTaskDelay(pdMS_TO_TICKS(1)); // 1 ms delay
     }
 }
+
 
 void Encoder1ProcessingTask(void *pvParameters) {
     TaskParams_t* params = (TaskParams_t*) pvParameters;
@@ -214,10 +211,10 @@ void Encoder1ProcessingTask(void *pvParameters) {
             //////////////////////////////////////////////////////////////////////////
             //////////////////////////////update speed////////////////////////////////
             //////////////////////////////////////////////////////////////////////////
-            // Calculate speed by counting the pulses during a second
-            if (currentTime - prevTime >= 1e6){
+            // Calculate speed by counting the pulses during 1 milli second
+            if (currentTime - prevTime >= 1e3){
                 // Calculate position change
-                speed = ((counter/((currentTime - prevTime)*1e-6))*60)/get_stepsPerRevolution(&encoder1); //((step/s)/(steps/rev))*(60s/1min)=rpm
+                speed = (((counter*1e6)/(currentTime - prevTime))*60)/get_stepsPerRevolution(&encoder1); //((step/s)/(steps/rev))*(60s/1min)=rpm
                 set_speed(&encoder1, speed);
                 
                 // Measure time using a hardware timer
@@ -226,7 +223,6 @@ void Encoder1ProcessingTask(void *pvParameters) {
                 counter = 0;
                 //////////////////////////////////////////////////////////////////////////
                 /////////////////////////////Log Message//////////////////////////////////
-                ESP_LOGI(TASK_LOG_TAG, "SPEED:%f RPM, POSITION:%f°", speed, get_positionDegrees(&encoder1));
                 xSemaphoreGive(encoder1Semaphore);
                 xQueueSend(speedQueue, &speed, 0);
                 //////////////////////////////////////////////////////////////////////////

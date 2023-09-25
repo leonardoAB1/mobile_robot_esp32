@@ -8,6 +8,9 @@
  *******************************************************************************/
 #include "../gpio_utils/gpio_utils.h"
 
+TimerHandle_t xTimer;
+uint8_t timerID = 1;
+
 esp_err_t init_gpio(void) {
     // Initialize GPIO pins for servos as PWM outputs
     // Motor1
@@ -49,6 +52,43 @@ esp_err_t init_gpio(void) {
     set_phaseB(&encoder1, gpio_get_level(FASE_B));
    
     return ESP_OK;
+}
+
+esp_err_t init_timer(void){
+    xTimer = xTimerCreate("Timer",       // Just a text name, not used by the kernel.
+                        pdMS_TO_TICKS(1000),   // The timer period in ticks.
+                        pdTRUE,        // The timers will auto-reload themselves when they expire.
+                        ( void * ) timerID,  // Assign each timer a unique id equal to its array index.
+                        vTimerCallback // Each timer calls the same callback when it expires.
+                        );
+
+    if( xTimer == NULL )
+    {
+        // The timer was not created.
+        ESP_LOGE(GPIO_TAG, "The timer was not created.");
+    }
+    else
+    {
+        // Start the timer.  No block time is specified, and even if one was
+        // it would be ignored because the scheduler has not yet been
+        // started.
+        if( xTimerStart( xTimer, 0 ) != pdPASS )
+        {
+            // The timer could not be set into the Active state.
+            ESP_LOGE(GPIO_TAG, "The timer could not be set into the Active state.");
+        }
+    }
+
+    return ESP_OK;
+}
+
+void vTimerCallback( TimerHandle_t pxTimer ){
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(encoder1Binary, &xHigherPriorityTaskWoken);
+
+    if (xHigherPriorityTaskWoken == pdTRUE) {
+        portYIELD_FROM_ISR();
+    }
 }
 
 esp_err_t init_isr(void)
@@ -95,6 +135,9 @@ void IRAM_ATTR update_encoder_isr(void* arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     xSemaphoreGiveFromISR(encoder1Binary, &xHigherPriorityTaskWoken);
+
+    // Reset the timer
+    xTimerReset(xTimer, 0);
 
     if (xHigherPriorityTaskWoken == pdTRUE) {
         portYIELD_FROM_ISR();

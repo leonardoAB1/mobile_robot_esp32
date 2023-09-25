@@ -22,6 +22,9 @@ void app_main(void)
     // Initialize GPIO pins
     init_gpio();
 
+    //Init timer
+    init_timer();
+
     //Init interrupt gpios
     init_isr();
 

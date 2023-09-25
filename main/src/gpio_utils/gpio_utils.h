@@ -19,6 +19,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
+#include "freertos/timers.h"
 
 #include "../logging/logging_utils.h"
 #include "../motor_control/motor_control.h"
@@ -93,6 +94,13 @@ typedef struct
     void *userData;                    /*< User data to be passed to the ISR */
     gpio_int_type_t interruptType;     /*< Interrupt type (e.g., GPIO_INTR_ANYEDGE) */
 } InterruptInitParams_t;
+
+/**
+ * @brief Initializes the timer.
+ */
+esp_err_t init_timer(void);
+
+void vTimerCallback( TimerHandle_t pxTimer );
 
 /**
  * @brief Initializes the interrupts.

@@ -91,24 +91,24 @@ esp_err_t handle_set_reference(httpd_req_t *req)
         return ESP_OK;
     }
 
-    uint32_t referenceSignal = valueObj->valueint;
+    int32_t referenceSignal = valueObj->valueint;
 
     if (ControlStrategy==OPEN_LOOP){
         // Process the referenceSignal using the AdcResolution
-    uint32_t maxOriginalValue = (1 << AdcResolution) - 1;       // Calculate the maximum value of the original range
-    float ratio = 100.0 / maxOriginalValue;                     // Calculate the ratio for mapping
+        uint32_t maxOriginalValue = (1 << AdcResolution) - 1;       // Calculate the maximum value of the original range
+        float ratio = 100.0 / maxOriginalValue;                     // Calculate the ratio for mapping
 
-    float mappedValue = referenceSignal * ratio;                // Map the referenceSignal to the new range
+        float mappedValue = referenceSignal * ratio;                // Map the referenceSignal to the new range
 
-    setReferenceState(mappedValue);                             //set reference to float from 0 to 100
+        setReferenceState(mappedValue);                             //set reference to float from 0 to 100
 
     } else if (ControlStrategy==PID_CONTROLLER){
         //Speed Saturation
-        if (referenceSignal > 250) {
-            referenceSignal = 250;
+        if (referenceSignal > 200) {
+            referenceSignal = 200;
         }
-        else if (referenceSignal < 0) {
-            referenceSignal = 0;
+        else if (referenceSignal < -200) {
+            referenceSignal = -200;
         }
         setReferenceState(referenceSignal); 
     }

@@ -11,11 +11,11 @@
 #ifndef CONFIG_H_
 #define CONFIG_H_
 
-//#define WIFI_SSID "Patuju_2.4G"
-//#define WIFI_PASSWORD "Paralelepipado"
+#define WIFI_SSID "Patuju_2.4G"
+#define WIFI_PASSWORD "Paralelepipado"
 
-#define WIFI_SSID "leoIP"
-#define WIFI_PASSWORD "panConQueso"
+//#define WIFI_SSID "leoIP"
+//#define WIFI_PASSWORD "panConQueso"
 
 #endif
 
