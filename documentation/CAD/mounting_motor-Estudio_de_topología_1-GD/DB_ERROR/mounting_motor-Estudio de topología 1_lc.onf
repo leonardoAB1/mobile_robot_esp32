@@ -1,0 +1,38 @@
+#
+# ONF 3.1
+#
+# DATA BLOCK 900: Map of result-request loadcase IDs
+#
+   -1
+   900
+0
+   -1
+#
+# DATA BLOCK 901: Map of result-request loadcase IDs to cosmos BC/PHLC IDs
+#
+   -1
+   901
+1
+1, 1, 1, 1, 0
+   -1
+#
+# DATA BLOCK 910: Information about the matrix step written to the modified FE-input deck
+#
+   -1
+   910
+0
+   -1
+#
+# DATA BLOCK 940: Info about set(s) of elements with special treatment of their stiffness matrix
+#
+   -1
+   940
+0
+   -1
+#
+# DATA BLOCK 950: Dresp map
+#
+   -1
+   950
+0
+   -1

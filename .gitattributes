@@ -1,0 +1,2 @@
+*.vtm filter=lfs diff=lfs merge=lfs -text
+*.CWR filter=lfs diff=lfs merge=lfs -text
