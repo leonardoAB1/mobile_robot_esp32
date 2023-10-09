@@ -31,6 +31,7 @@ SemaphoreHandle_t encoder2Semaphore;
 QueueHandle_t motor2SpeedQueue;
 TaskParams_t taskParams2; 
 
+DirectKinematicsParams_t directKinematicsParams;
 
 void initialize_tasks(void)
 {
@@ -46,14 +47,17 @@ void initialize_tasks(void)
     encoder2Binary = xSemaphoreCreateBinary();
     motor2SpeedQueue = xQueueCreate(50, sizeof(float));
     taskParams2.param1 = motor2SpeedQueue;
-    
+
+    directKinematicsParams.motor1SpeedQueue = motor1SpeedQueue;
+    directKinematicsParams.motor2SpeedQueue = motor2SpeedQueue;
 
 	TaskInitParams_t const TaskInitParameters[] = {
 		// Pointer to the Task function, Task String Name, The task stack depth, Parameter Pointer, Task priority, Task Handle
 		{(TaskFunction_t)Motor1ControlTask, "motor1_control_task", TASK_MOTOR1_CONTROL_STACK_DEPTH, &taskParams1, TASK_MOTOR1_CONTROL_PRIORITY, &motor1Task, TASK_MOTOR1_CONTROL_CORE},
         {(TaskFunction_t)Encoder1ProcessingTask, "encoder_processing_task", ENCODER1_STACK_DEPTH, &taskParams1, TASK_ENCODER1_PRIORITY, &encoder1Task, ENCODER1_CORE},
         {(TaskFunction_t)Motor2ControlTask, "motor2_control_task", TASK_MOTOR2_CONTROL_STACK_DEPTH, &taskParams2, TASK_MOTOR2_CONTROL_PRIORITY, &motor2Task, TASK_MOTOR2_CONTROL_CORE},
-        {(TaskFunction_t)Encoder2ProcessingTask, "encoder_processing_task", ENCODER2_STACK_DEPTH, &taskParams2, TASK_ENCODER2_PRIORITY, &encoder2Task, ENCODER2_CORE}
+        {(TaskFunction_t)Encoder2ProcessingTask, "encoder_processing_task", ENCODER2_STACK_DEPTH, &taskParams2, TASK_ENCODER2_PRIORITY, &encoder2Task, ENCODER2_CORE},
+        {(TaskFunction_t)DirectKinematicsTask, "direct_kinematics_task", DIRECT_KINEMATICS_STACK_DEPTH, &directKinematicsParams, DIRECT_KINEMATICS_PRIORITY, NULL, DIRECT_KINEMATICS_CORE}
     };
 
 	// Loop through the task table and create each task.
@@ -415,6 +419,34 @@ void Encoder2ProcessingTask(void *pvParameters) {
                 xSemaphoreGive(encoder2Semaphore);  
             }
         }
+    }
+}
+
+void DirectKinematicsTask(void *pvParameters) {
+    DirectKinematicsParams_t* params = (DirectKinematicsParams_t*)pvParameters;
+    QueueHandle_t motor1SpeedQueue = params->motor1SpeedQueue;
+    QueueHandle_t motor2SpeedQueue = params->motor2SpeedQueue;
+
+    float motor1_speed = 0.0;
+    float motor2_speed = 0.0;
+
+    while (1) {
+        // Read the speed values from the motor1SpeedQueue and motor2SpeedQueue
+        if (xQueueReceive(motor1SpeedQueue, &motor1_speed, portMAX_DELAY) == pdTRUE &&
+            xQueueReceive(motor2SpeedQueue, &motor2_speed, portMAX_DELAY) == pdTRUE) {
+            // Perform direct kinematics calculations here using motor1_speed and motor2_speed
+            
+            float robot_speed = (motor1_speed + motor2_speed)/2; //1=left 2=right
+            float robot_angle = (motor2_speed - motor1_speed)/(2*ROBOT_WIDTH); 
+
+            // Do whatever processing you need with the direct kinematics results
+
+            // Log or send the results as needed
+            ESP_LOGI("Direct Kinematics:", "Lineal Speed: %f Angular Speed: %f", robot_speed, robot_angle);
+        }
+
+        // Delay for task execution rate control
+        vTaskDelay(pdMS_TO_TICKS(10)); // 10 ms delay
     }
 }
 

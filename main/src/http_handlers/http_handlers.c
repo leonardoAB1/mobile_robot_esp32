@@ -330,5 +330,105 @@ esp_err_t handle_get_encoder2(httpd_req_t *req)
     return ESP_OK;
 }
 
+esp_err_t handle_set_robot_speed(httpd_req_t *req)
+{
+    // Check if the request method is POST
+    if (req->method != HTTP_POST) {
+        httpd_resp_send_err(req, HTTPD_405_METHOD_NOT_ALLOWED, "Method Not Allowed");
+        return ESP_OK;
+    }
+
+    // Get the content length
+    char content_length_str[16];
+    if (httpd_req_get_hdr_value_str(req, "Content-Length", content_length_str, sizeof(content_length_str)) != ESP_OK) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad Request");
+        return ESP_OK;
+    }
+
+    size_t content_len = atoi(content_length_str);
+
+    // Read the request content data
+    char *content = malloc(content_len + 1);
+    if (!content) {
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Internal Server Error");
+        return ESP_OK;
+    }
+
+    int ret = httpd_req_recv(req, content, content_len);
+    if (ret <= 0) {
+        free(content);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Bad Request");
+        return ESP_OK;
+    }
+
+    content[ret] = '\0'; // Null-terminate the content
+
+    // Parse the JSON content
+    cJSON *json = cJSON_Parse(content);
+    if (!json) {
+        free(content);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_OK;
+    }
+
+    // Get the values from the JSON object
+    cJSON *speedObj = cJSON_GetObjectItem(json, "robot_speed");
+    cJSON *angleObj = cJSON_GetObjectItem(json, "robot_angle");
+
+    if (!speedObj || !angleObj || !cJSON_IsNumber(speedObj) || !cJSON_IsNumber(angleObj)) {
+        cJSON_Delete(json);
+        free(content);
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_OK;
+    }
+
+    // Extract robot speed and angle from JSON
+    float robot_speed = speedObj->valuedouble;
+    float robot_angle = angleObj->valuedouble;
+
+    // Calculate left and right wheel speeds using inverse kinematic equations
+
+
+    float v_left = (robot_speed - robot_angle * ROBOT_WIDTH) / (WHEEL_DIAMETER);//(m/s)
+    v_left= (v_left / (3.14159265* WHEEL_DIAMETER)) * 60;//(RPM)
+    float v_right =(robot_speed + robot_angle * ROBOT_WIDTH) / (WHEEL_DIAMETER);//(m/s)
+    v_left= (v_right / (3.14159265* WHEEL_DIAMETER)) * 60;//(RPM)
+
+    // Apply speed saturation to limit the wheel speeds to a maximum of 200 RPM
+    if (v_left > 200.0) {
+        v_left = 200.0;
+    } else if (v_left < -200.0) {
+        v_left = -200.0;
+    }
+
+    if (v_right > 200.0) {
+        v_right = 200.0;
+    } else if (v_right < -200.0) {
+        v_right = -200.0;
+    }
+
+    v_left = (v_left/200)*100;
+    v_right =(v_right/200)*100;
+
+    // Set the references for the left and right motors' speeds
+    ControlStrategy=PID_CONTROLLER;
+    setReference1State(v_left);  
+    setReference2State(v_right); 
+
+    // Log the updated values
+    ESP_LOGI(CONTROL_TAG, "Left Motor Speed: %.2f, Right Motor Speed: %.2f", v_left, v_right);
+
+    // Cleanup
+    cJSON_Delete(json);
+    free(content);
+
+    // Send a response
+    httpd_resp_set_type(req, "text/plain");
+    httpd_resp_send(req, "Robot speed updated successfully", -1);
+
+    return ESP_OK;
+}
+
+
 /********************************* END OF FILE ********************************/
 /******************************************************************************/
