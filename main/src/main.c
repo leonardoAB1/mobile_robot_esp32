@@ -16,14 +16,20 @@ void app_main(void)
     // Initialize NVS (Non-Volatile Storage)
     nvs_flash_init_custom(ret);
 
+    // Connect to WiFi
+    connect_wifi();
+
+    // Start the web server
+    start_webserver();
+
     //Initialize encoder
-    init_encoder(&encoder1);
+    init_encoder();
 
     // Initialize GPIO pins
     init_gpio();
 
     //Init timer
-    init_timer();
+    init_timers();
 
     //Init interrupt gpios
     init_isr();
@@ -33,12 +39,6 @@ void app_main(void)
 
     //Initialize FreeRTOS Tasks
     initialize_tasks();
-
-    // Connect to WiFi
-    connect_wifi();
-
-    // Start the web server
-    start_webserver();
 }
 
 esp_err_t nvs_flash_init_custom(esp_err_t ret){

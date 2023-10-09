@@ -47,9 +47,11 @@ typedef struct {
     uint8_t channel;
     float angle;
     bool is_active;
+    uint8_t pin1;
+    uint8_t pin2;
 } Motor;
 
-Motor create_motor(ledc_mode_t speed_mode, uint8_t channel);
+Motor create_motor(ledc_mode_t speed_mode, uint8_t channel, uint8_t pin1, uint8_t pin2);
 
 void initialize_motors(void);
 

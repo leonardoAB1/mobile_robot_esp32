@@ -65,9 +65,13 @@ enum gpio_num_t{
 /** @endcond */
 };
 
-//ENCODER GM25-370
-#define FASE_A GPIO_NUM_23
-#define FASE_B GPIO_NUM_22 
+//ENCODER 1 GM25-370
+#define FASE_A1 GPIO_NUM_23
+#define FASE_B1 GPIO_NUM_22 
+
+//ENCODER 2 GM25-370
+#define FASE_A2 GPIO_NUM_21
+#define FASE_B2 GPIO_NUM_19 
 
 //PRIMER MOTOR
 #define GPIO_ENA GPIO_NUM_14
@@ -98,9 +102,10 @@ typedef struct
 /**
  * @brief Initializes the timer.
  */
-esp_err_t init_timer(void);
+esp_err_t init_timers(void);
 
-void vTimerCallback( TimerHandle_t pxTimer );
+void vTimer1Callback( TimerHandle_t pxTimer );
+void vTimer2Callback( TimerHandle_t pxTimer );
 
 /**
  * @brief Initializes the interrupts.
@@ -108,10 +113,14 @@ void vTimerCallback( TimerHandle_t pxTimer );
 esp_err_t init_isr(void);
 
 // Function declarations for the interrupt service routines
-void update_encoder_isr(void* arg);
+void update_encoder1_isr(void* arg);
+void update_encoder2_isr(void* arg);
 
 extern Encoder encoder1;
 extern SemaphoreHandle_t encoder1Binary;
+
+extern Encoder encoder2;
+extern SemaphoreHandle_t encoder2Binary;
 
 #endif /* GPIO_UTILS_H_ */
 
