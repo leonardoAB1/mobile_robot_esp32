@@ -49,6 +49,10 @@
 #define DIRECT_KINEMATICS_STACK_DEPTH 2048*3
 #define DIRECT_KINEMATICS_PRIORITY tskIDLE_PRIORITY+10
 #define DIRECT_KINEMATICS_CORE 0
+// Define the stack depth and priority for the Odometry Task
+#define ODOMETRY_STACK_DEPTH 2048*3
+#define ODOMETRY_PRIORITY tskIDLE_PRIORITY+10
+#define ODOMETRY_CORE 1
 
 // Constants for the EWMA filter
 #define EWMA_ALPHA 0.15 // Adjust this value to control the filter's smoothing effect
@@ -86,7 +90,7 @@ typedef struct
 typedef struct {
     QueueHandle_t motor1SpeedQueue;
     QueueHandle_t motor2SpeedQueue;
-} DirectKinematicsParams_t;
+} MotorSpeedParams_t;
 
 /**
  * @brief Initializes the tasks and creates the task table.
@@ -103,6 +107,8 @@ void Motor2ControlTask(void *pvParameters);
 void Encoder2ProcessingTask(void *pvParameters);
 
 void DirectKinematicsTask(void *pvParameters);
+
+void OdometryTask(void *pvParameters);
 
 extern Motor motor1;
 extern Motor motor2;

@@ -23,7 +23,7 @@
 #include "../motor_control/motor_control.h"
 #include "../encoder/encoder.h"
 
-#define ROBOT_WIDTH 97*1e-3
+#define ROBOT_WIDTH 2*97*1e-3
 #define WHEEL_DIAMETER 66.42*1e-3
 
 /**
