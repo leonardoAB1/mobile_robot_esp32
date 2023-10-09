@@ -11,23 +11,25 @@
 
 uint8_t ControlStrategy = OPEN_LOOP;
 
-Motor create_motor(ledc_mode_t speed_mode, uint8_t channel) {
+Motor create_motor(ledc_mode_t speed_mode, uint8_t channel, uint8_t pin1, uint8_t pin2) {
     Motor motor;
     motor.speed_mode = speed_mode;
     motor.channel = channel;
     motor.angle = 0.0f;
     motor.is_active = true;
+    motor.pin1 = pin1;
+    motor.pin2 = pin2;
     return motor;
 }
 
 //Global motor strucures
 Motor motor1;
-//Motor motor2;
+Motor motor2;
 
 void initialize_motors()
 {
-    motor1 = create_motor(MOTOR_1_SPEED_MODE, MOTOR_1_CHANNEL);
-    //motor2 = create_motor(MOTOR_2_SPEED_MODE, MOTOR_2_CHANNEL);
+    motor1 = create_motor(MOTOR_1_SPEED_MODE, MOTOR_1_CHANNEL, GPIO_IN1, GPIO_IN2);
+    motor2 = create_motor(MOTOR_2_SPEED_MODE, MOTOR_2_CHANNEL, GPIO_IN3, GPIO_IN4);
 }
 
 void start_motor_movement(Motor *motor) {
@@ -50,17 +52,17 @@ esp_err_t move_motor(const Motor *motor, uint16_t duty, uint8_t direction) {
 
     if (duty == 0) {
         // STOP the motor
-        gpio_set_level(GPIO_IN1, 0);
-        gpio_set_level(GPIO_IN2, 0);
+        gpio_set_level(motor->pin1, 0);
+        gpio_set_level(motor->pin2, 0);
     } else {
         if (direction == 0) {
             // Move RIGHT
-            gpio_set_level(GPIO_IN1, 1);
-            gpio_set_level(GPIO_IN2, 0);
+            gpio_set_level(motor->pin1, 1);
+            gpio_set_level(motor->pin2, 0);
         } else if (direction == 1) {
             // Move LEFT
-            gpio_set_level(GPIO_IN1, 0);
-            gpio_set_level(GPIO_IN2, 1);
+            gpio_set_level(motor->pin1, 0);
+            gpio_set_level(motor->pin2, 1);
         }
     }
 

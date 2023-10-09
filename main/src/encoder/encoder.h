@@ -56,7 +56,7 @@ float get_speed(const Encoder *encoder);
 void set_direction(Encoder *encoder, uint8_t new_direction);
 uint8_t get_direction(const Encoder *encoder);
 
-void init_encoder(Encoder *encoder);
+void init_encoder(void);
 
 double roundToDecimal(double num, uint8_t decimalPlaces);
 

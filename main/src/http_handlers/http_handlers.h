@@ -30,15 +30,22 @@
  */
 esp_err_t status_httpd_handler(httpd_req_t *req);
 
-esp_err_t handle_set_reference(httpd_req_t *req);
+esp_err_t handle_set_reference1(httpd_req_t *req);
 
-esp_err_t handle_get_reference(httpd_req_t *req);
+esp_err_t handle_get_reference1(httpd_req_t *req);
 
-esp_err_t handle_get_encoder(httpd_req_t *req);
+esp_err_t handle_get_encoder1(httpd_req_t *req);
+
+esp_err_t handle_set_reference2(httpd_req_t *req);
+
+esp_err_t handle_get_reference2(httpd_req_t *req);
+
+esp_err_t handle_get_encoder2(httpd_req_t *req);
 
 extern Motor motor1;
 extern Motor motor2;
 extern Encoder encoder1;
+extern Encoder encoder2;
 extern uint8_t ControlStrategy;
 
 #endif  // HTTP_HANDLERS_H

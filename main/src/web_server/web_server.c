@@ -19,7 +19,7 @@ void start_webserver(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     config.core_id = 1;  // Set the core ID to 0 (core 0)
     config.max_uri_handlers = 20;
-    config.task_priority    = tskIDLE_PRIORITY+1;
+    config.task_priority    = tskIDLE_PRIORITY+3;
     //config.uri_match_fn     = httpd_uri_match_wildcard;
 
     // Start the HTTP server
@@ -34,29 +34,53 @@ void start_webserver(void)
         };
         httpd_register_uri_handler(server, &status_uri);
 
-        httpd_uri_t reference_set_uri = {
-            .uri = "/reference/set",
+        httpd_uri_t reference1_set_uri = {
+            .uri = "/reference1/set",
             .method = HTTP_POST,
-            .handler = handle_set_reference, 
+            .handler = handle_set_reference1, 
             .user_ctx = NULL
         };
-        httpd_register_uri_handler(server, &reference_set_uri);
+        httpd_register_uri_handler(server, &reference1_set_uri);
 
-        httpd_uri_t reference_get_uri = {
-            .uri = "/reference/get",
+        httpd_uri_t reference1_get_uri = {
+            .uri = "/reference1/get",
             .method = HTTP_GET,
-            .handler = handle_get_reference, 
+            .handler = handle_get_reference1, 
             .user_ctx = NULL
         };
-        httpd_register_uri_handler(server, &reference_get_uri);
+        httpd_register_uri_handler(server, &reference1_get_uri);
 
-        httpd_uri_t encoder_get_uri = {
-            .uri = "/encoder/get",
+        httpd_uri_t encoder1_get_uri = {
+            .uri = "/encoder1/get",
             .method = HTTP_GET,
-            .handler = handle_get_encoder, 
+            .handler = handle_get_encoder1, 
             .user_ctx = NULL
         };
-        httpd_register_uri_handler(server, &encoder_get_uri);
+        httpd_register_uri_handler(server, &encoder1_get_uri);
+
+        httpd_uri_t reference2_set_uri = {
+            .uri = "/reference2/set",
+            .method = HTTP_POST,
+            .handler = handle_set_reference2, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &reference2_set_uri);
+
+        httpd_uri_t reference2_get_uri = {
+            .uri = "/reference2/get",
+            .method = HTTP_GET,
+            .handler = handle_get_reference2, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &reference2_get_uri);
+
+        httpd_uri_t encoder2_get_uri = {
+            .uri = "/encoder2/get",
+            .method = HTTP_GET,
+            .handler = handle_get_encoder2, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &encoder2_get_uri);
 
         ESP_LOGI(WEBSERVER_TAG, "HTTP server started");
     }

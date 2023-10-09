@@ -31,6 +31,7 @@
 esp_err_t nvs_flash_init_custom(esp_err_t ret);
 
 extern Encoder encoder1;
+extern Encoder encoder2;
 
 #endif /* MAIN_H */
 

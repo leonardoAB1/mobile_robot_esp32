@@ -96,10 +96,12 @@ uint8_t get_direction(const Encoder *encoder) {
 
 //Global encoder structure
 Encoder encoder1;
+Encoder encoder2;
 
-void init_encoder(Encoder *encoder) {
+void init_encoder(void) {
     // Initialize encoders
     encoder1 = create_encoder(0, 0, PPR);
+    encoder2 = create_encoder(0, 0, PPR);
 }
 
 double roundToDecimal(double num, uint8_t decimalPlaces) {

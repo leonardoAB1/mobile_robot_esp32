@@ -22,11 +22,6 @@
 #include "../ble_utils/ble_utils.h"
 #endif
 
-// Define the stack depth and priority for the Default Control Task
-#define TASK_MOTOR_DEFAULT_CONTROL_STACK_DEPTH 2048*3
-#define TASK_MOTOR_DEFAULT_CONTROL_PRIORITY tskIDLE_PRIORITY+8
-#define TASK_MOTOR_DEFAULT_CONTROL_CORE 1
-
 #if ENABLE_BLE
 // Define the stack depth and priority for the BLE Notification Task
 #define TASK_BLE_NOTIFICATION_STACK_DEPTH 1024*5 
@@ -34,16 +29,27 @@
 #define TASK_BLE_NOTIFICATION_CORE 0
 #endif /* ENABLE_BLE */
 
-// Define the stack depth and priority for the Default Control Task
+// Define the stack depth and priority for the Motor1 Control Task
+#define TASK_MOTOR1_CONTROL_STACK_DEPTH 2048*3
+#define TASK_MOTOR1_CONTROL_PRIORITY tskIDLE_PRIORITY+8
+#define TASK_MOTOR1_CONTROL_CORE 1
+// Define the stack depth and priority for the Motor1 Control Task
 #define ENCODER1_STACK_DEPTH 2048*3
-#define TASK_ENCODER1_PRIORITY tskIDLE_PRIORITY+8
-#define ENCODER1_CORE 0
-#define LOG_INTERVAL_MS 1
+#define TASK_ENCODER1_PRIORITY tskIDLE_PRIORITY+7
+#define ENCODER1_CORE 1
 
-#define MOTOR_ANGLES_QUEUE_ITEM_NUMBER 10  
+// Define the stack depth and priority for the Motor1 Control Task
+#define TASK_MOTOR2_CONTROL_STACK_DEPTH 2048*3
+#define TASK_MOTOR2_CONTROL_PRIORITY tskIDLE_PRIORITY+8
+#define TASK_MOTOR2_CONTROL_CORE 0
+// Define the stack depth and priority for the Motor1 Control Task
+#define ENCODER2_STACK_DEPTH 2048*3
+#define TASK_ENCODER2_PRIORITY tskIDLE_PRIORITY+7
+#define ENCODER2_CORE 0
 
-#define ALPHA 0.1 // Smoothing factor for the EWMA
-#define THRESHOLD 0.9 // Threshold for comparing with angle
+// Constants for the EWMA filter
+#define EWMA_ALPHA 0.15 // Adjust this value to control the filter's smoothing effect
+#define EWMA_ALPHA_2 0.2
 
 //Struct to pass angles to Queue
 typedef struct
@@ -80,14 +86,20 @@ typedef struct
  */
 void initialize_tasks(void);
 
-void MotorDefaultControlTask(void *pvParameters);
+void Motor1ControlTask(void *pvParameters);
 
 void Encoder1ProcessingTask(void *pvParameters);
 
+void Motor2ControlTask(void *pvParameters);
+
+void Encoder2ProcessingTask(void *pvParameters);
+
 extern Motor motor1;
 extern Motor motor2;
-extern float_t referenceState;
+extern float_t referenceState1;
+extern float_t referenceState2;
 extern Encoder encoder1;
+extern Encoder encoder2;
 extern uint8_t ControlStrategy;
 
 #endif /* _TASKS_H_ */
