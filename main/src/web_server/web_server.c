@@ -82,6 +82,14 @@ void start_webserver(void)
         };
         httpd_register_uri_handler(server, &encoder2_get_uri);
 
+        httpd_uri_t robot_speed_set_uri = {
+            .uri = "/robot/speed/set",
+            .method = HTTP_POST,
+            .handler = handle_set_robot_speed, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &robot_speed_set_uri);
+
         ESP_LOGI(WEBSERVER_TAG, "HTTP server started");
     }
 }

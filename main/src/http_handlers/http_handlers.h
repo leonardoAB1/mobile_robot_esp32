@@ -23,6 +23,9 @@
 #include "../motor_control/motor_control.h"
 #include "../encoder/encoder.h"
 
+#define ROBOT_WIDTH 97*1e-3
+#define WHEEL_DIAMETER 66.42*1e-3
+
 /**
  * @brief       HTTP request handler for getting the camera status.
  * @param[in]   req The HTTP request object.
@@ -41,6 +44,8 @@ esp_err_t handle_set_reference2(httpd_req_t *req);
 esp_err_t handle_get_reference2(httpd_req_t *req);
 
 esp_err_t handle_get_encoder2(httpd_req_t *req);
+
+esp_err_t handle_set_robot_speed(httpd_req_t *req);
 
 extern Motor motor1;
 extern Motor motor2;

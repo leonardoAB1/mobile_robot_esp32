@@ -37,7 +37,6 @@
 #define ENCODER1_STACK_DEPTH 2048*3
 #define TASK_ENCODER1_PRIORITY tskIDLE_PRIORITY+7
 #define ENCODER1_CORE 1
-
 // Define the stack depth and priority for the Motor1 Control Task
 #define TASK_MOTOR2_CONTROL_STACK_DEPTH 2048*3
 #define TASK_MOTOR2_CONTROL_PRIORITY tskIDLE_PRIORITY+8
@@ -46,6 +45,10 @@
 #define ENCODER2_STACK_DEPTH 2048*3
 #define TASK_ENCODER2_PRIORITY tskIDLE_PRIORITY+7
 #define ENCODER2_CORE 0
+// Define the stack depth and priority for the Direct Kinematics Task
+#define DIRECT_KINEMATICS_STACK_DEPTH 2048*3
+#define DIRECT_KINEMATICS_PRIORITY tskIDLE_PRIORITY+10
+#define DIRECT_KINEMATICS_CORE 0
 
 // Constants for the EWMA filter
 #define EWMA_ALPHA 0.15 // Adjust this value to control the filter's smoothing effect
@@ -80,6 +83,11 @@ typedef struct
 	uint8_t TaskCore;					     /*< Task core (0 or 1)           */
 } TaskInitParams_t;
 
+typedef struct {
+    QueueHandle_t motor1SpeedQueue;
+    QueueHandle_t motor2SpeedQueue;
+} DirectKinematicsParams_t;
+
 /**
  * @brief Initializes the tasks and creates the task table.
  * 
@@ -93,6 +101,8 @@ void Encoder1ProcessingTask(void *pvParameters);
 void Motor2ControlTask(void *pvParameters);
 
 void Encoder2ProcessingTask(void *pvParameters);
+
+void DirectKinematicsTask(void *pvParameters);
 
 extern Motor motor1;
 extern Motor motor2;
