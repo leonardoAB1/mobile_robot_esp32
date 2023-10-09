@@ -31,7 +31,10 @@ SemaphoreHandle_t encoder2Semaphore;
 QueueHandle_t motor2SpeedQueue;
 TaskParams_t taskParams2; 
 
-DirectKinematicsParams_t directKinematicsParams;
+TaskHandle_t directKinematicsTask;
+MotorSpeedParams_t motorSpeedParams;
+
+TaskHandle_t odometryTask;
 
 void initialize_tasks(void)
 {
@@ -48,8 +51,8 @@ void initialize_tasks(void)
     motor2SpeedQueue = xQueueCreate(50, sizeof(float));
     taskParams2.param1 = motor2SpeedQueue;
 
-    directKinematicsParams.motor1SpeedQueue = motor1SpeedQueue;
-    directKinematicsParams.motor2SpeedQueue = motor2SpeedQueue;
+    motorSpeedParams.motor1SpeedQueue = motor1SpeedQueue;
+    motorSpeedParams.motor2SpeedQueue = motor2SpeedQueue;
 
 	TaskInitParams_t const TaskInitParameters[] = {
 		// Pointer to the Task function, Task String Name, The task stack depth, Parameter Pointer, Task priority, Task Handle
@@ -57,7 +60,8 @@ void initialize_tasks(void)
         {(TaskFunction_t)Encoder1ProcessingTask, "encoder_processing_task", ENCODER1_STACK_DEPTH, &taskParams1, TASK_ENCODER1_PRIORITY, &encoder1Task, ENCODER1_CORE},
         {(TaskFunction_t)Motor2ControlTask, "motor2_control_task", TASK_MOTOR2_CONTROL_STACK_DEPTH, &taskParams2, TASK_MOTOR2_CONTROL_PRIORITY, &motor2Task, TASK_MOTOR2_CONTROL_CORE},
         {(TaskFunction_t)Encoder2ProcessingTask, "encoder_processing_task", ENCODER2_STACK_DEPTH, &taskParams2, TASK_ENCODER2_PRIORITY, &encoder2Task, ENCODER2_CORE},
-        {(TaskFunction_t)DirectKinematicsTask, "direct_kinematics_task", DIRECT_KINEMATICS_STACK_DEPTH, &directKinematicsParams, DIRECT_KINEMATICS_PRIORITY, NULL, DIRECT_KINEMATICS_CORE}
+        {(TaskFunction_t)DirectKinematicsTask, "direct_kinematics_task", DIRECT_KINEMATICS_STACK_DEPTH, &motorSpeedParams, DIRECT_KINEMATICS_PRIORITY, &directKinematicsTask, DIRECT_KINEMATICS_CORE},
+        {(TaskFunction_t)OdometryTask, "odometry_task", ODOMETRY_STACK_DEPTH, &motorSpeedParams, ODOMETRY_PRIORITY, &odometryTask, ODOMETRY_CORE}
     };
 
 	// Loop through the task table and create each task.
@@ -423,7 +427,7 @@ void Encoder2ProcessingTask(void *pvParameters) {
 }
 
 void DirectKinematicsTask(void *pvParameters) {
-    DirectKinematicsParams_t* params = (DirectKinematicsParams_t*)pvParameters;
+    MotorSpeedParams_t* params = (MotorSpeedParams_t*)pvParameters;
     QueueHandle_t motor1SpeedQueue = params->motor1SpeedQueue;
     QueueHandle_t motor2SpeedQueue = params->motor2SpeedQueue;
 
@@ -431,15 +435,15 @@ void DirectKinematicsTask(void *pvParameters) {
     float motor2_speed = 0.0;
 
     while (1) {
-        // Read the speed values from the motor1SpeedQueue and motor2SpeedQueue
+        // Read the speed values from the motor1SpeedQueue and motor2SpeedQueue in rpm
         if (xQueueReceive(motor1SpeedQueue, &motor1_speed, portMAX_DELAY) == pdTRUE &&
             xQueueReceive(motor2SpeedQueue, &motor2_speed, portMAX_DELAY) == pdTRUE) {
-            // Perform direct kinematics calculations here using motor1_speed and motor2_speed
-            
-            float robot_speed = (motor1_speed + motor2_speed)/2; //1=left 2=right
-            float robot_angle = (motor2_speed - motor1_speed)/(2*ROBOT_WIDTH); 
-
-            // Do whatever processing you need with the direct kinematics results
+            //rpm to rad/s
+            motor1_speed = (motor1_speed* 2.0 * M_PI) / 60.0; 
+            motor2_speed = (motor2_speed* 2.0 * M_PI) / 60.0;
+            // Direct kinematics calculations here using motor1_speed and motor2_speed
+            float robot_speed = (motor1_speed + motor2_speed)*(WHEEL_DIAMETER/4); //1=left 2=right
+            float robot_angle = (motor2_speed - motor1_speed)*(WHEEL_DIAMETER/(4*ROBOT_WIDTH)); 
 
             // Log or send the results as needed
             ESP_LOGI("Direct Kinematics:", "Lineal Speed: %f Angular Speed: %f", robot_speed, robot_angle);
@@ -447,6 +451,52 @@ void DirectKinematicsTask(void *pvParameters) {
 
         // Delay for task execution rate control
         vTaskDelay(pdMS_TO_TICKS(10)); // 10 ms delay
+    }
+}
+
+void OdometryTask(void *pvParameters) {
+    MotorSpeedParams_t* params = (MotorSpeedParams_t*)pvParameters;
+    QueueHandle_t motor1SpeedQueue = params->motor1SpeedQueue;
+    QueueHandle_t motor2SpeedQueue = params->motor2SpeedQueue;
+
+    float motor1_speed = 0.0;
+    float motor2_speed = 0.0;
+    
+    // Initialize odometry variables
+    float x = 0.0; // Robot's x-coordinate
+    float y = 0.0; // Robot's y-coordinate
+    float theta = 0.0; // Robot's orientation angle (in radians)
+
+    while (1) {
+        // Read the speed values from the motor1SpeedQueue and motor2SpeedQueue in rpm
+        if (xQueueReceive(motor1SpeedQueue, &motor1_speed, portMAX_DELAY) == pdTRUE &&
+            xQueueReceive(motor2SpeedQueue, &motor2_speed, portMAX_DELAY) == pdTRUE) {
+            // Calculate wheel displacements (S) (in meters)
+            float deltaSLeft = (2 * M_PI * (WHEEL_DIAMETER/2) * motor1_speed) / 60.0;
+            float deltaSRight = (2 * M_PI * (WHEEL_DIAMETER/2) * motor2_speed) / 60.0;
+
+            // Calculate the change in robot position and orientation using kinematic equations
+            float deltaS = (deltaSLeft + deltaSRight) / 2.0;
+            float deltaTheta = (deltaSRight - deltaSLeft) / ROBOT_WIDTH;
+            
+            // Update the robot's position and orientation
+            x += deltaS * cos(theta + deltaTheta / 2.0);
+            y += deltaS * sin(theta + deltaTheta / 2.0);
+            theta += deltaTheta;
+
+            // Ensure the orientation angle remains within the range [-pi, pi]
+            while (theta > M_PI) {
+                theta -= 2 * M_PI;
+            }
+            while (theta < -M_PI) {
+                theta += 2 * M_PI;
+            }
+
+            // Log or send the updated robot pose (x, y, theta) as needed
+            ESP_LOGI("Odometry", "Position: (%f, %f), Orientation: %f", x, y, theta);
+        }
+        // Delay for task execution rate control
+        vTaskDelay(pdMS_TO_TICKS(10)); // Adjust the delay as needed
     }
 }
 
