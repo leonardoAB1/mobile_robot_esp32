@@ -25,6 +25,14 @@ void setReference2State(float_t state);
 // Getter functions
 float_t getReference2State(void);
 
+void setAngularSpeedState(float_t state);
+
+float_t getAngularSpeedState(void);
+
+void setSpeedState(float_t state);
+
+float_t getSpeedState(void);
+
 #endif /* GPIO_STATE_H_ */
 
 /********************************* END OF FILE ********************************/

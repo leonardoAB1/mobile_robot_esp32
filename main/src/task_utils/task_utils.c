@@ -448,6 +448,8 @@ void DirectKinematicsTask(void *pvParameters) {
             // Direct kinematics calculations here using motor1_speed and motor2_speed
             float robot_speed = (motor1_speed + motor2_speed)*(WHEEL_DIAMETER/4); //1=left 2=right
             float robot_angle = (motor2_speed - motor1_speed)*(WHEEL_DIAMETER/(4*ROBOT_WIDTH)); 
+            setSpeedState(robot_speed);
+            setAngularSpeedState(robot_angle);
 
             // Log or send the results as needed
             ESP_LOGI("Direct Kinematics:", "Lineal Speed: %f Angular Speed: %f", robot_speed, robot_angle);
