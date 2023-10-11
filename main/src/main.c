@@ -2,7 +2,7 @@
  * @file        main.c
  * @author      Leonardo Acha Boiano
  * @date        12 August 2023
- * @brief       Main code, low level controller brushed motor
+ * @brief       Main code, Differential Robot
  * 
  * @note        This code is written in C and is used on the ESP32 DEVKIT V1 board.
  *
