@@ -330,6 +330,29 @@ esp_err_t handle_get_encoder2(httpd_req_t *req)
     return ESP_OK;
 }
 
+esp_err_t handle_get_robot_speed(httpd_req_t *req)
+{
+    // Create a JSON response payload
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(json, "robotSpeed", getSpeedState());
+    cJSON_AddNumberToObject(json, "robotAngularSpeed", getAngularSpeedState());
+    char *payload = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+
+    // Set the Content-Type header to application/json
+    httpd_resp_set_type(req, "application/json");
+
+    // Send the JSON response payload
+    httpd_resp_send(req, payload, strlen(payload));
+
+    // Free the allocated JSON payload if it's not NULL
+    if (payload != NULL) {
+        free(payload);
+    }
+
+    return ESP_OK;
+}
+
 esp_err_t handle_set_robot_speed(httpd_req_t *req)
 {
     // Check if the request method is POST

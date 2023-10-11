@@ -90,6 +90,14 @@ void start_webserver(void)
         };
         httpd_register_uri_handler(server, &robot_speed_set_uri);
 
+        httpd_uri_t robot_speed_get_uri = {
+            .uri = "/robot/speed/get",
+            .method = HTTP_GET,
+            .handler = handle_get_robot_speed, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &robot_speed_get_uri);
+
         ESP_LOGI(WEBSERVER_TAG, "HTTP server started");
     }
 }
