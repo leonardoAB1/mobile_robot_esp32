@@ -9,9 +9,9 @@
  *******************************************************************************/
 #include "../task_utils/task_utils.h"
 #define Ts 1e-3
-#define Kp 0.228
-#define Ki 2.1
-#define Kd 0.0001
+#define Kp 2
+#define Ki 2
+#define Kd 0.0006
 
 BaseType_t result;         // Define result globally
 
@@ -141,6 +141,8 @@ void Motor1ControlTask(void *pvParameters) {
 
                 // PID Controller
                 u[0] = u[1] + Kp * (e[0] - e[1]) + Ki * Ts * e[0] + (Kd / Ts) * (e[0] - 2 * e[1] + e[2]);
+                // Controller Filter
+                u[0] = filterEWMA(u[0], u[1], 0.35);
 
                 // Control Signal Saturation
                 if (u[0] > 100) {
@@ -171,7 +173,7 @@ void Motor1ControlTask(void *pvParameters) {
 
         // Log values
         counter+=1;
-        if (counter==10)
+        if (counter==15)
         {
             ESP_LOGI("MOTOR 1:", "SPEED:%f,REFERENCE:%f,CONTROL:%f,ERROR:%f", y[0], referenceState1, u[0], e[0]);
             counter=0;
@@ -311,6 +313,8 @@ void Motor2ControlTask(void *pvParameters) {
 
                 // PID Controller
                 u[0] = u[1] + Kp * (e[0] - e[1]) + Ki * Ts * e[0] + (Kd / Ts) * (e[0] - 2 * e[1] + e[2]);
+                // Controller Filter
+                u[0] = filterEWMA(u[0], u[1], 0.35);
 
                 // Control Signal Saturation
                 if (u[0] > 100) {
@@ -341,7 +345,7 @@ void Motor2ControlTask(void *pvParameters) {
 
         // Log values
         counter+=1;
-        if (counter==10)
+        if (counter==15)
         {
             ESP_LOGI("MOTOR 2:", "SPEED:%f,REFERENCE:%f,CONTROL:%f,ERROR:%f", y[0], referenceState2, u[0], e[0]);
             counter=0;
@@ -450,7 +454,7 @@ void DirectKinematicsTask(void *pvParameters) {
         }
 
         // Delay for task execution rate control
-        vTaskDelay(pdMS_TO_TICKS(10)); // 10 ms delay
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -461,7 +465,7 @@ void OdometryTask(void *pvParameters) {
 
     float motor1_speed = 0.0;
     float motor2_speed = 0.0;
-    
+
     // Initialize odometry variables
     float x = 0.0; // Robot's x-coordinate
     float y = 0.0; // Robot's y-coordinate
@@ -496,7 +500,7 @@ void OdometryTask(void *pvParameters) {
             ESP_LOGI("Odometry", "Position: (%f, %f), Orientation: %f", x, y, theta);
         }
         // Delay for task execution rate control
-        vTaskDelay(pdMS_TO_TICKS(10)); // Adjust the delay as needed
+        vTaskDelay(pdMS_TO_TICKS(100)); 
     }
 }
 

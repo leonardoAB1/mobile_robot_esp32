@@ -383,18 +383,17 @@ esp_err_t handle_set_robot_speed(httpd_req_t *req)
     }
 
     // Extract robot speed and angle from JSON
-    float robot_speed = speedObj->valuedouble;
-    float robot_angle = angleObj->valuedouble;
+    float robot_speed = speedObj->valuedouble;//m/s
+    float robot_angle = angleObj->valuedouble;//radians
 
     // Calculate left and right wheel speeds using inverse kinematic equations
-
-
-    float v_left = (robot_speed - robot_angle * ROBOT_WIDTH) / (WHEEL_DIAMETER);//(m/s)
-    v_left= (v_left / (3.14159265* WHEEL_DIAMETER)) * 60;//(RPM)
-    float v_right =(robot_speed + robot_angle * ROBOT_WIDTH) / (WHEEL_DIAMETER);//(m/s)
-    v_left= (v_right / (3.14159265* WHEEL_DIAMETER)) * 60;//(RPM)
+    float v_left = (robot_speed - robot_angle * ROBOT_WIDTH) / (WHEEL_DIAMETER/2);//(rad/s)
+    v_left= v_left*(60/(2*M_PI));//(RPM)
+    float v_right =(robot_speed + robot_angle * ROBOT_WIDTH) / (WHEEL_DIAMETER/2);//(rad/s)
+    v_right= v_right*(60/(2*M_PI));//(RPM)
 
     // Apply speed saturation to limit the wheel speeds to a maximum of 200 RPM
+    //CLOSE LOOP SATURATION
     if (v_left > 200.0) {
         v_left = 200.0;
     } else if (v_left < -200.0) {
@@ -406,11 +405,13 @@ esp_err_t handle_set_robot_speed(httpd_req_t *req)
     } else if (v_right < -200.0) {
         v_right = -200.0;
     }
-
-    v_left = (v_left/200)*100;
-    v_right =(v_right/200)*100;
+    
+    //OPEN LOOP SATURATION
+    //v_left = (v_left/200)*100;
+    //v_right =(v_right/200)*100;
 
     // Set the references for the left and right motors' speeds
+    //ControlStrategy=OPEN_LOOP;
     ControlStrategy=PID_CONTROLLER;
     setReference1State(v_left);  
     setReference2State(v_right); 
