@@ -98,6 +98,22 @@ void start_webserver(void)
         };
         httpd_register_uri_handler(server, &robot_speed_get_uri);
 
+        httpd_uri_t robot_distance_reset_uri = {
+            .uri = "/robot/distance/reset",
+            .method = HTTP_POST,
+            .handler = handle_reset_robot_distance, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &robot_distance_reset_uri);
+
+        httpd_uri_t robot_distance_get_uri = {
+            .uri = "/robot/distance/get",
+            .method = HTTP_GET,
+            .handler = handle_get_robot_distance, 
+            .user_ctx = NULL
+        };
+        httpd_register_uri_handler(server, &robot_distance_get_uri);
+
         ESP_LOGI(WEBSERVER_TAG, "HTTP server started");
     }
 }

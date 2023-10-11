@@ -12,6 +12,9 @@ volatile float_t referenceState1 = 0;
 volatile float_t referenceState2 = 0;
 volatile float_t robot_speed_fk = 0;
 volatile float_t robot_angular_speed_fk = 0;
+volatile float_t robot_x = 0;
+volatile float_t robot_y = 0;
+volatile float_t robot_theta = 0;
 
 // Function to check the GPIO's current state
 void checkGPIOState(uint8_t currentState, volatile uint8_t* stateVariable) {
@@ -59,6 +62,42 @@ float_t getSpeedState(void){
 
 void setAngularSpeedState(float_t state){
     robot_angular_speed_fk=state;
+}
+
+float_t getRobotXState(void){
+    return robot_x;
+}
+
+void resetRobotXState(void){
+    robot_x=0;
+}
+
+void setRobotXState(float_t state){
+    robot_x=state;
+}
+
+float_t getRobotYState(void){
+    return robot_y;
+}
+
+void resetRobotYState(void){
+    robot_y=0;
+}
+
+void setRobotYState(float_t state){
+    robot_y=state;
+}
+
+float_t getRobotThetaState(void){
+    return robot_theta;
+}
+
+void resetRobotThetaState(void){
+    robot_theta=0;
+}
+
+void setRobotThetaState(float_t state){
+    robot_theta=state;
 }
 
 /********************************* END OF FILE ********************************/

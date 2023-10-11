@@ -33,6 +33,24 @@ void setSpeedState(float_t state);
 
 float_t getSpeedState(void);
 
+float_t getRobotXState(void);
+
+void resetRobotXState(void);
+
+void setRobotXState(float_t state);
+
+float_t getRobotYState(void);
+
+void resetRobotYState(void);
+
+void setRobotYState(float_t state);
+
+float_t getRobotThetaState(void);
+
+void resetRobotThetaState(void);
+
+void setRobotThetaState(float_t state);
+
 #endif /* GPIO_STATE_H_ */
 
 /********************************* END OF FILE ********************************/
