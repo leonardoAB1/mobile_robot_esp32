@@ -498,6 +498,10 @@ void OdometryTask(void *pvParameters) {
                 theta += 2 * M_PI;
             }
 
+            setRobotXState(x);
+            setRobotYState(y);
+            setRobotThetaState(theta);
+            
             // Log or send the updated robot pose (x, y, theta) as needed
             ESP_LOGI("Odometry", "Position: (%f, %f), Orientation: %f", x, y, theta);
         }

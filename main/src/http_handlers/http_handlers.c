@@ -452,7 +452,45 @@ esp_err_t handle_set_robot_speed(httpd_req_t *req)
 
     return ESP_OK;
 }
+esp_err_t handle_reset_robot_distance(httpd_req_t *req) {
+    // Reset the robot's X, Y, and theta states
+    resetRobotXState();
+    resetRobotYState();
+    resetRobotThetaState();
 
+    // Send a response to indicate that the reset was successful
+    httpd_resp_set_type(req, "text/plain");
+    httpd_resp_send(req, "Robot distance reset successfully", -1);
+
+    return ESP_OK;
+}
+
+esp_err_t handle_get_robot_distance(httpd_req_t *req) {
+    // Get the robot's X, Y, and theta states
+    float x = getRobotXState();
+    float y = getRobotYState();
+    float theta = getRobotThetaState();
+
+    // Create a JSON response payload with the robot's distance information
+    cJSON *json = cJSON_CreateObject();
+    cJSON_AddNumberToObject(json, "robot_x", x);
+    cJSON_AddNumberToObject(json, "robot_y", y);
+    cJSON_AddNumberToObject(json, "robot_theta", theta);
+
+    char *payload = cJSON_PrintUnformatted(json);
+    cJSON_Delete(json);
+
+    // Set the Content-Type header to application/json
+    httpd_resp_set_type(req, "application/json");
+
+    // Send the JSON response payload
+    httpd_resp_send(req, payload, strlen(payload));
+
+    // Free the allocated JSON payload
+    free(payload);
+
+    return ESP_OK;
+}
 
 /********************************* END OF FILE ********************************/
 /******************************************************************************/
