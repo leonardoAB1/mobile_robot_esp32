@@ -18,6 +18,8 @@ El proyecto está diseñado para ser utilizado con la placa ESP32 DEVKIT V1.
 El control PWM para el motor se encuentra implementado en el archivo `motor_control.c`. En este archivo, se utilizan las funciones `ledc_set_duty` y `ledc_update_duty` para establecer y actualizar el ciclo de trabajo (duty cycle) del motor. Además, se proporciona una función para calcular el ciclo de trabajo basado en un ángulo y se definen métodos para obtener y establecer el ángulo del motor.
 
 Para más detalles, revisa el código en [`motor_control.c`](ruta/a/motor_control.c).
+
+
 ## Controlador PID de Motores
 
 El controlador PID de motores es una parte fundamental de la funcionalidad de control de dos motores en un robot. Está implementado en el archivo task_utils.c, específicamente en las funciones `Motor1ControlTask` y `Motor2ControlTask`. Estas funciones manejan el control de motores y aplican un controlador PID para mantener las velocidades deseadas.
@@ -92,6 +94,11 @@ El proceso es el siguiente:
 
 Este código proporciona una sólida base para la implementación de la cinemática inversa en aplicaciones de control de robots móviles, lo que es esencial para lograr un control preciso y eficiente del movimiento.
 
+## Odometría en task_utils.c - odometryTask
+
+La funcionalidad de odometría se encuentra implementada en la tarea (`Task`) `OdometryTask` del archivo `task_utils.c`. En esta tarea, se calculan las posiciones (x, y) y la orientación (theta) del robot en función de las velocidades de los motores y las dimensiones de las ruedas. Estos cálculos se realizan utilizando las ecuaciones cinemáticas del robot y las velocidades de los motores.
+
+Para más detalles, revisa el código en [`task_utils.c`](ruta/a/task_utils.c).
 
 ## Visión General
 
