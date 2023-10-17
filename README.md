@@ -94,7 +94,7 @@ El proceso es el siguiente:
 
 Este código proporciona una sólida base para la implementación de la cinemática inversa en aplicaciones de control de robots móviles, lo que es esencial para lograr un control preciso y eficiente del movimiento.
 
-## Odometría en task_utils.c - odometryTask
+## Odometría
 
 La funcionalidad de odometría se encuentra implementada en la tarea (`Task`) `OdometryTask` del archivo `task_utils.c`. En esta tarea, se calculan las posiciones (x, y) y la orientación (theta) del robot en función de las velocidades de los motores y las dimensiones de las ruedas. Estos cálculos se realizan utilizando las ecuaciones cinemáticas del robot y las velocidades de los motores.
 
