@@ -5,7 +5,7 @@ El proyecto está diseñado para ser utilizado con la placa ESP32 DEVKIT V1.
 
 ## Tabla de Contenidos
 - [Controlador PID](#Controlador-PID)
-- [Odometria] (#Odometria)
+- [Odometria](#Odometria)
 - [Cinematica Directa](#Cinematica-Directa) 
 - [Cinematica Inversa](#Cinematica-Inversa)
 - [PWM](#PWM)
