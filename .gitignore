@@ -8,3 +8,5 @@ components/
 dependencies.lock
 sdkconfig
 sdkconfig.old
+find_large_file.sh
+git-filter-repo
