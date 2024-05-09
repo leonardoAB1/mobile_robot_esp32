@@ -5,7 +5,6 @@ build/
 components/
 
 # Ignore specific files
-CMakeLists.txt
 dependencies.lock
 sdkconfig
 sdkconfig.old
