@@ -1,122 +1,120 @@
-# Sistema de Control de Robot Móvil
+# Mobile Robot Control System
 
-Este repositorio contiene el código fuente y la documentación de un sistema de control de Robot Diferencial desarrollado como parte del curso de Mecatrónica en la [UCB (Universidad Católica Boliviana)](https://www.scz.ucb.edu.bo). 
-El proyecto está diseñado para ser utilizado con la placa ESP32 DEVKIT V1.
+This repository contains the source code and documentation for a Differential Robot Control System developed as part of the Mechatronics course at [UCB (Universidad Católica Boliviana)](https://www.scz.ucb.edu.bo). The project is designed to be used with the ESP32 DEVKIT V1 board.
 
-## Tabla de Contenidos
-- [Sistema de Control de Robot Móvil](#sistema-de-control-de-robot-móvil)
-  - [Tabla de Contenidos](#tabla-de-contenidos)
-  - [PWM en motor\_control.c](#pwm-en-motor_controlc)
-  - [Controlador PID de Motores](#controlador-pid-de-motores)
-    - [Uso](#uso)
-  - [Cinemática Directa](#cinemática-directa)
-    - [Uso](#uso-1)
-    - [Descripción detallada](#descripción-detallada)
-  - [Cinemática Inversa](#cinemática-inversa)
-    - [Uso](#uso-2)
-  - [Odometría](#odometría)
-  - [Visión General](#visión-general)
-  - [Contribuyentes](#contribuyentes)
-  - [Licencia](#licencia)
+## Table of Contents
+- [Mobile Robot Control System](#mobile-robot-control-system)
+  - [Table of Contents](#table-of-contents)
+  - [PWM in motor\_control.c](#pwm-in-motor_controlc)
+  - [PID Motor Controller](#pid-motor-controller)
+    - [Usage](#usage)
+  - [Forward Kinematics](#forward-kinematics)
+    - [Usage](#usage-1)
+    - [Detailed Description](#detailed-description)
+  - [Inverse Kinematics](#inverse-kinematics)
+    - [Usage](#usage-2)
+  - [Odometry](#odometry)
+  - [Overview](#overview)
+  - [Contributors](#contributors)
+  - [License](#license)
 
-## PWM en motor_control.c
+## PWM in motor_control.c
 
-El control PWM para el motor se encuentra implementado en el archivo `motor_control.c`. En este archivo, se utilizan las funciones `ledc_set_duty` y `ledc_update_duty` para establecer y actualizar el ciclo de trabajo (duty cycle) del motor. Además, se proporciona una función para calcular el ciclo de trabajo basado en un ángulo y se definen métodos para obtener y establecer el ángulo del motor.
+The PWM control for the motor is implemented in the `motor_control.c` file. In this file, the functions `ledc_set_duty` and `ledc_update_duty` are used to set and update the motor's duty cycle. Additionally, a function is provided to calculate the duty cycle based on an angle, and methods are defined to get and set the motor angle.
 
-Para más detalles, revisa el código en [`motor_control.c`](ruta/a/motor_control.c).
+For more details, check the code in [`motor_control.c`](path/to/motor_control.c).
 
+## PID Motor Controller
 
-## Controlador PID de Motores
+The PID motor controller is a fundamental part of the two-motor control functionality in a robot. It is implemented in the `task_utils.c` file, specifically in the `Motor1ControlTask` and `Motor2ControlTask` functions. These functions handle motor control and apply a PID controller to maintain the desired speeds.
 
-El controlador PID de motores es una parte fundamental de la funcionalidad de control de dos motores en un robot. Está implementado en el archivo task_utils.c, específicamente en las funciones `Motor1ControlTask` y `Motor2ControlTask`. Estas funciones manejan el control de motores y aplican un controlador PID para mantener las velocidades deseadas.
+### Usage
 
-### Uso
+The process is developed as follows:
 
-El proceso se desarrolla de la siguiente manera:
+1. **Speed Reading**: The functions read the current motor speeds from a message queue.
 
-1. **Lectura de Velocidad**: Las funciones leen las velocidades actuales de los motores a partir de una cola de mensajes.
+2. **Speed Filtering**: They apply an Exponential Weighted Moving Average (EWMA) filter to smooth the speed readings.
 
-2. **Filtrado de Velocidad**: Aplican un filtro de mediana exponencial ponderada (EWMA) a las velocidades para suavizar las lecturas.
+3. **Speed Control**: Depending on the selected control strategy (either open-loop or PID control), the functions calculate the duty cycle value to control the motors.
 
-3. **Control de Velocidad**: Dependiendo de la estrategia de control seleccionada (ya sea control en lazo abierto o control PID), las funciones calculan el valor del ciclo de trabajo (`duty_cycle`) para controlar los motores.
+4. **PID Controller**: If using the PID controller, they calculate the error, apply PID control, and saturate the control signal as necessary.
 
-4. **Controlador PID**: En caso de utilizar el controlador PID, se calcula el error, se aplica el control PID y se satura la señal de control según sea necesario.
+5. **Value Logging**: They log the current values, including motor speed, desired reference, control signal, and error.
 
-5. **Log de Valores**: Se registran los valores actuales, incluyendo la velocidad del motor, la referencia deseada, la señal de control y el error.
+6. **Motor Update**: Finally, they set the duty cycle for the motors according to the calculated signals and move accordingly.
 
-6. **Actualización de Motores**: Finalmente, se establece el ciclo de trabajo para los motores según la dirección y se mueven de acuerdo a las señales calculadas.
+These functions provide a solid foundation for implementing precise and efficient motor control, which is essential for the controlled movement of a robot.
 
-Estas funciones proporcionan una sólida base para implementar un control de motores preciso y eficiente, lo que es esencial para el movimiento controlado de un robot.
+## Forward Kinematics
 
+Forward kinematics is implemented in the `task_utils.c` file through the `DirectKinematicsTask`. This task plays a crucial role in calculating a mobile robot's linear and angular velocity based on its wheel speeds. These values are logged or sent as needed.
 
+### Usage
 
-## Cinemática Directa 
+To utilize this functionality, it is essential to provide the necessary parameters to the task, including the motor speed queues. The constants `WHEEL_DIAMETER` and `ROBOT_WIDTH` should also be configured according to the robot's specific dimensions. The task runs in a continuous loop, periodically processing motor speed data and updating the robot's speed state.
 
-La cinemática directa se encuentra implementada en el archivo task_utils.c a través de la tarea `DirectKinematicsTask`. Esta tarea desempeña un papel fundamental en el cálculo de la velocidad lineal y angular de un robot móvil en función de las velocidades de sus ruedas. Estos valores se registran o envían según sea necesario.
+### Detailed Description
 
-### Uso
+This code implements forward kinematics for a mobile robot, a calculation that relates the robot's wheel speeds to its real-world linear and angular velocity. The task operates as follows:
 
-Para aprovechar esta funcionalidad, es esencial proporcionar los parámetros necesarios a la tarea, incluyendo las colas de velocidad de los motores. También se debe configurar las constantes `DIÁMETRO_RUEDA` y `ANCHO_ROBOT` de acuerdo a las especificaciones particulares del robot. La tarea se ejecuta en un bucle continuo, procesando de manera periódica los datos de velocidad de los motores y actualizando el estado de velocidad del robot.
+1. **Speed Reading**: The task reads the left and right wheel speeds in revolutions per minute (rpm) from the `motor1SpeedQueue` and `motor2SpeedQueue` message queues.
 
-### Descripción detallada
+2. **Unit Conversion**: It converts the wheel speeds from rpm to
 
-Este código implementa la cinemática directa para un robot móvil, un cálculo que relaciona las velocidades de las ruedas del robot con su velocidad lineal y angular en el mundo real. La tarea funciona de la siguiente manera:
+radians per second (rad/s).
 
-1. **Lectura de Velocidades**: La tarea lee las velocidades de las ruedas izquierda y derecha en unidades de revoluciones por minuto (rpm) desde las colas de mensajes `motor1SpeedQueue` y `motor2SpeedQueue`.
+3. **Velocity Calculation**: It calculates the robot's linear and angular velocities using the wheel speeds and parameters like the wheel diameter (`WHEEL_DIAMETER`) and the robot width (`ROBOT_WIDTH`).
 
-2. **Conversión de Unidades**: Convierte las velocidades de las ruedas de rpm a radianes por segundo (rad/s).
+4. **State Update**: It sets the robot's linear and angular velocity states.
 
-3. **Cálculo de Velocidades**: Calcula la velocidad lineal y la velocidad angular del robot utilizando las velocidades de las ruedas y parámetros como el diámetro de las ruedas (`DIÁMETRO_RUEDA`) y el ancho del robot (`ANCHO_ROBOT`).
+5. **Result Logging or Sending**: It logs or sends the results, including the robot's linear and angular velocity, for further monitoring or control.
 
-4. **Actualización de Estados**: Establece los estados de velocidad y velocidad angular del robot.
+6. **Frequency Control**: The task loop runs with a controlled frequency, regulated by a 100 ms delay (`pdMS_TO_TICKS(100)`), to ensure consistent task execution and state updates.
 
-5. **Registro o Envío de Resultados**: Registra o envía los resultados, que incluyen la velocidad lineal y la velocidad angular del robot, para su posterior seguimiento o control.
+This approach provides an effective way to obtain the forward kinematics of a mobile robot, which is essential for a wide variety of robotics applications.
 
-6. **Control de Frecuencia**: El bucle de la tarea se ejecuta con una frecuencia controlada por un retraso de 100 ms (`pdMS_TO_TICKS(100)`) para regular la tasa de ejecución de la tarea y asegurar una actualización consistente.
+## Inverse Kinematics
 
-Este enfoque proporciona una forma eficaz de obtener la cinemática directa de un robot móvil, lo que es esencial para una amplia variedad de aplicaciones de robótica.
+Inverse kinematics, a crucial part of mobile robot control, is implemented in the `http_handlers.c` file, specifically in the `handle_set_robot_speed` function. This function handles requests to update the robot's speed and calculates the left and right wheel speeds using inverse kinematics equations.
 
-## Cinemática Inversa 
+### Usage
 
-La cinemática inversa, una parte esencial en el control de robots móviles, está implementada en el archivo http_handlers.c, específicamente en la función `handle_set_robot_speed`. Esta función maneja las solicitudes para actualizar la velocidad del robot y calcula las velocidades de las ruedas izquierda y derecha utilizando ecuaciones de cinemática inversa.
+The process is as follows:
 
-### Uso
+1. **Request Reception**: The function checks that the request is of type POST.
 
-El proceso es el siguiente:
+2. **JSON Data Extraction**: It then extracts JSON data from the request, including the robot speed (`robot_speed`) and the robot angle (`robot_angle`).
 
-1. **Recepción de la Solicitud**: La función verifica la solicitud para asegurarse de que sea de tipo POST.
+3. **Wheel Speed Calculation**: Using inverse kinematics, the function calculates the left and right wheel speeds in RPM based on the robot's speed and angle.
 
-2. **Extracción de Datos JSON**: Luego, extrae los datos JSON de la solicitud, incluyendo la velocidad del robot (`robot_speed`) y el ángulo del robot (`robot_angle`).
+4. **Speed Limiting**: It applies speed saturation to limit the wheel speeds to a maximum of 200 RPM.
 
-3. **Cálculo de Velocidades de Ruedas**: Utilizando la cinemática inversa, la función calcula las velocidades de las ruedas izquierda y derecha en RPM a partir de la velocidad del robot y el ángulo.
+5. **Setting References**: It sets the references for the left and right motor speeds according to the selected control strategy.
 
-4. **Limitación de Velocidades**: Aplica una saturación de velocidad para limitar las velocidades de las ruedas a un máximo de 200 RPM.
+6. **Logging Updated Values**: It logs the updated motor speed values.
 
-5. **Establecimiento de Referencias**: Establece las referencias para las velocidades de los motores izquierdo y derecho, según el control de estrategia seleccionado.
+7. **Response**: Finally, it sends a response indicating that the robot's speed has been successfully updated.
 
-6. **Registro de Valores Actualizados**: Registra los valores actualizados de las velocidades de los motores.
+This code provides a robust foundation for implementing inverse kinematics in mobile robot control applications, which is essential for achieving precise and efficient movement control.
 
-7. **Respuesta**: Finalmente, envía una respuesta indicando que la velocidad del robot ha sido actualizada exitosamente.
+## Odometry
 
-Este código proporciona una sólida base para la implementación de la cinemática inversa en aplicaciones de control de robots móviles, lo que es esencial para lograr un control preciso y eficiente del movimiento.
+The odometry functionality is implemented in the `OdometryTask` task in the `task_utils.c` file. In this task, the robot's positions (x, y) and orientation (theta) are calculated based on the motor speeds and wheel dimensions. These calculations are performed using the robot's kinematic equations and motor speeds.
 
-## Odometría
+For more details, check the code in [`task_utils.c`](path/to/task_utils.c).
 
-La funcionalidad de odometría se encuentra implementada en la tarea (`Task`) `OdometryTask` del archivo `task_utils.c`. En esta tarea, se calculan las posiciones (x, y) y la orientación (theta) del robot en función de las velocidades de los motores y las dimensiones de las ruedas. Estos cálculos se realizan utilizando las ecuaciones cinemáticas del robot y las velocidades de los motores.
+## Overview
 
-Para más detalles, revisa el código en [`task_utils.c`](ruta/a/task_utils.c).
+The Differential Robot Control System is designed to provide control and monitoring capabilities for a mobile robot. It includes features such as Wi-Fi connectivity, a web server for remote control and monitoring, encoder initialization, GPIO pin management, timer initialization, interrupt handling, and motor control. This codebase serves as a foundation for building and customizing mobile robot projects.
 
-## Visión General
+## Contributors
 
-El sistema de control de Robot Diferencial está diseñado para proporcionar capacidades de control y monitoreo para un robot móvil. Incluye características como conectividad Wi-Fi, un servidor web para control y monitoreo remotos, inicialización de encoders, gestión de pines GPIO, inicialización de temporizadores, manejo de interrupciones y control de motores. Esta base de código sirve como fundamento para construir y personalizar proyectos de robots móviles.
-
-## Contribuyentes
-
-- [Leonardo Acha Boiano]((https://github.com/leonardoAB1))
-- [Bruno Ramiro Rejas]()
+- [Leonardo Acha Boiano](https://github.com/leonardoAB1)
+- [Bruno Ramiro Rejas](https://github.com/BrunoRRM712)
 - [Gonzalo Peralta]()
-- [Andrés Ayala]()
+- [Andrés Ayala](https://github.com/mecatrono)
 
-## Licencia
+## License
 
-Este proyecto está bajo la [Licencia MIT](LICENSE).
+This project is licensed under the [MIT License](LICENSE).
