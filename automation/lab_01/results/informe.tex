@@ -1,7 +1,7 @@
 \documentclass[conference,onecolumn]{IEEEtran}
 
 % Language setting
-\usepackage[spanish]{babel}
+\usepackage[english]{babel}
 
 \usepackage{ragged2e}
 
@@ -26,11 +26,11 @@
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 \begin{document}
 
-\title{Implementación de Controlador Digital de Bajo Nivel para motores DC\\
-{\footnotesize Laboratorio 1}}
+\title{Implementation of a Low-Level Digital Controller for DC Motors\\
+{\footnotesize Laboratory 1}}
 
 \author{\IEEEauthorblockN{Leonardo Achá Boiano}
-\IEEEauthorblockA{\textit{Ingenieria Mecatrónica: IMT 342} \\
+\IEEEauthorblockA{\textit{Mechatronics Engineering: IMT 342} \\
 \textit{Universidad Católica Boliviana}\\
 Santa Cruz de la Sierra, Bolivia \\
 leonardo.acha@ucb.edu.bo}
@@ -40,76 +40,75 @@ leonardo.acha@ucb.edu.bo}
 \justifying 
 
 \begin{abstract}
-Este informe presenta la implementación de un controlador digital de bajo nivel para motores DC en el contexto de un laboratorio de ingeniería mecatrónica. El trabajo aborda desde la medición de la señal de entrada hasta la implementación y evaluación del controlador digital. Se describe el proceso de medición de la señal de entrada, la supervisión de modulación por ancho de pulsos (PWM) y la implementación del control en lazo abierto del motor DC. En la segunda parte del laboratorio, se desarrolla un sistema de lazo abierto para la planta, se diseña y sintoniza un controlador PID en configuración paralela, y se transfieren los parámetros a la planta real. Los resultados experimentales muestran el rendimiento del sistema en lazo cerrado frente a diferentes tipos de entrada, como señales sinusoidales y escalones. Este trabajo proporciona una visión completa de la implementación de controladores digitales para motores DC en aplicaciones mecatrónicas.
+This report presents the implementation of a low-level digital controller for DC motors in the context of a mechatronics engineering laboratory. The work addresses from the measurement of the input signal to the implementation and evaluation of the digital controller. The process of measuring the input signal, monitoring pulse-width modulation (PWM), and implementing open-loop control of the DC motor is described. In the second part of the laboratory, an open-loop system for the plant is developed, a PID controller in parallel configuration is designed and tuned, and the parameters are transferred to the real plant. The experimental results show the performance of the closed-loop system against different types of inputs, such as sinusoidal signals and steps. This work provides a comprehensive overview of the implementation of digital controllers for DC motors in mechatronic applications.
 
 \end{abstract}
 
 \begin{IEEEkeywords}
-Control, Motor, ESP32, PID, Matlab, Lazo Abierto, Lazo cerrado, Encoder.
+Control, Motor, ESP32, PID, Matlab, Open Loop, Closed Loop, Encoder.
 \end{IEEEkeywords}
 
-\section{Introducción}
-En este informe se presenta la implementación de un controlador digital de bajo nivel para motores DC en el contexto de un laboratorio de ingeniería mecatrónica. Este trabajo se centró en comprender y aplicar conceptos clave de control, modulación por ancho de pulsos (PWM) y sistemas de lazo cerrado para optimizar el rendimiento y la precisión del motor DC. A lo largo del informe, se describen las etapas del proceso experimental, desde la medición de la señal de entrada hasta la implementación y evaluación del controlador digital, proporcionando una visión detallada de esta importante área de la ingeniería mecatrónica.
+\section{Introduction}
+This report presents the implementation of a low-level digital controller for DC motors in the context of a mechatronics engineering laboratory. This work focused on understanding and applying key concepts of control, pulse-width modulation (PWM), and closed-loop systems to optimize the performance and accuracy of the DC motor. Throughout the report, the stages of the experimental process are described, from the measurement of the input signal to the implementation and evaluation of the digital controller, providing a detailed view of this important area of mechatronics engineering.
 
-\section{Procedimiento}
-La metodología empleada en el laboratorio se desarrolló de la siguiente manera. En primer lugar, se procedió a medir la señal de entrada por medio de la conexión wifi implementada en el microcontrolador, en este caso, el STM32. La señal de entrada era sinusoidal y provenía de un programa que simulaba un generador de señales analógico enviando la señal digitalizada con una resolución de 16 bits.
+\section{Procedure}
+The methodology used in the laboratory was developed as follows. First, the input signal was measured via the wifi connection implemented in the microcontroller, in this case, the STM32. The input signal was sinusoidal and came from a program simulating an analog signal generator, sending the digitized signal with a 16-bit resolution.
 
-Posteriormente, se supervisó el funcionamiento correcto del módulo de modulación por ancho de pulsos (PWM) utilizando un osciloscopio para asegurar que el PWM generara la señal correctamente con una frecuencias variadas.
+Subsequently, the correct operation of the pulse-width modulation (PWM) module was monitored using an oscilloscope to ensure that the PWM generated the signal correctly with varied frequencies.
 
-Luego, se implementó el control de pulsos del motor DC, lo que implicó calcular el ciclo de trabajo del PWM en función de la señal de entrada como se puede apreciar en la Figura~\ref{fig:encoder_signal}. Además, se determinó la dirección de rotación del motor en relación con el rango del ADC y se proporcionó el signo de la señal por separado.
+Then, the pulse control of the DC motor was implemented, which involved calculating the PWM duty cycle based on the input signal as shown in Figure~\ref{fig:encoder_signal}. Additionally, the direction of motor rotation was determined in relation to the ADC range, and the sign of the signal was provided separately.
 
-El siguiente paso involucró el control de la velocidad y dirección de giro del motor, lo que se logró ajustando el ciclo de trabajo del PWM.
+The next step involved controlling the speed and direction of the motor, which was achieved by adjusting the PWM duty cycle.
 
-Para obtener el \textit{Bode Plot} de fase y amplitud de sistema de lazo abierto, se recopilaron los datos de la respuesta del sistema a una entrada de escalón, de la misma se extrajeron los parámetros del sistema.
+To obtain the open-loop system's Bode Plot of phase and amplitude, the system's response to a step input was recorded, from which the system parameters were extracted.
 
-En la segunda parte del laboratorio, centrado en la construcción del sistema de lazo cerrado, se sintetizó e implementó un controlador digital en la plataforma utilizando el modelo obtenido previamente en el sistema de lazo abierto para sintonizar el controlador en simulación. Este controlador se diseñó para cumplir con las especificaciones técnicas, incluido un \textit{overshoot} menor al 30\% y un error de sistema de e = 2° para una señal a 0.05 Hz.
+In the second part of the laboratory, focused on building the closed-loop system, a digital controller was synthesized and implemented on the platform using the model previously obtained in the open-loop system to tune the controller in simulation. This controller was designed to meet technical specifications, including an overshoot of less than 30\% and a system error of e = 2° for a signal at 0.05 Hz.
 
-Finalmente, se evaluó la calidad del sistema cerrado para asegurar que cumpliera con los requisitos técnicos establecidos.
+Finally, the quality of the closed-loop system was evaluated to ensure it met the established technical requirements.
 
-\section{Resultados}
+\section{Results}
 
-\subsection{Desarrollo de la Planta}
+\subsection{Plant Development}
 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_1.jpg}}
-    \caption{Señal del Encoder del Motor Visualizada en el Osciloscopio}
+    \caption{Encoder Signal of the Motor Visualized on the Oscilloscope}
     \label{fig:encoder_signal}
 \end{figure}
 
-La Figura~\ref{fig:encoder_signal} presenta la señal del encoder del motor DC, capturada y visualizada en un osciloscopio. Esta representación gráfica es fundamental para entender cómo se traduce la posición del motor en una señal eléctrica. La forma de onda exhibida en el osciloscopio proporciona información sobre la velocidad y dirección del motor, lo que resulta crucial para el control y monitoreo del sistema. Se pudo calcular experimentalmente que el encoder del motor utilizado generaba un promedio de 480 pulsos por revolución. Se aproximó este numero a 512 para que sea potencia de 2 como suele ser el caso de los codificadores binarios.
+Figure~\ref{fig:encoder_signal} shows the encoder signal of the DC motor, captured and visualized on an oscilloscope. This graphical representation is crucial for understanding how the motor's position is translated into an electrical signal. The waveform displayed on the oscilloscope provides information about the speed and direction of the motor, which is essential for the control and monitoring of the system. It was experimentally calculated that the encoder of the motor used generated an average of 480 pulses per revolution. This number was approximated to 512 to be a power of 2, as is often the case with binary encoders.
 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_2_ewma_filter_04.png}}
-    \caption{Respuesta del sistema en lazo abierto a una entrada escalón}
+    \caption{Open-loop System Response to a Step Input}
     \label{fig:open_loop_response}
 \end{figure}
 
-La Figura~\ref{fig:open_loop_response} muestra la respuesta del sistema en lazo abierto cuando se le aplica una señal de entrada en forma de escalón. Este gráfico es esencial para comprender el comportamiento intrínseco de la planta sin ningún controlador aplicado. Revela aspectos como el tiempo de respuesta, el sobre impulso y la estabilidad inherente del sistema. 
-Notese que inicialmente la señal medida presentaba una cantidad significativa de ruido. A fin de mitigar este ruido se implementó un filtro digital de medias ponderadas.
+Figure~\ref{fig:open_loop_response} shows the open-loop system's response to a step input. This graph is essential to understand the intrinsic behavior of the plant without any applied controller. It reveals aspects such as response time, overshoot, and the system's inherent stability. Note that the initially measured signal exhibited a significant amount of noise. To mitigate this noise, a digital weighted moving average filter was implemented.
 
-\subsection{Identificación del Sistema}
+\subsection{System Identification}
 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_3.png}}
-    \caption{Identificación del Sistema}
+    \caption{System Identification}
     \label{fig:sistem_identification}
 \end{figure}
 
-En la Figura~\ref{fig:sistem_identification} se presenta el proceso de identificación del sistema. 
-Mediante \textit{system identification} de matlab se idéntico los parámetros de la planta y se discreto la misma mediante el método de sostenedor de orden cero.
-A través de este procedimiento, se obtienen los parámetros característicos de la planta, lo que incluye su respuesta en frecuencia y sus dinámicas.
+Figure~\ref{fig:sistem_identification} presents the system identification process. 
+Using Matlab's system identification, the plant parameters were identified and the same was discretized using the zero-order hold method.
+Through this procedure, the characteristic parameters of the plant are obtained, including its frequency response and dynamics.
 
 \begin{equation}
 \frac{0.04234 z^{-1}}{1 - 0.983 z^{-1}}
 \end{equation}
 
 
-\subsection{Implementación del Controlador}
+\subsection{Controller Implementation}
 
-Una vez identificado el sistema, procedimos a seleccionar un controlador. En este caso, optamos por el controlador PID en configuración paralela debido a su facilidad para ser sintonizado mediante métodos prácticos, sin requerir cálculos complejos. Como se observa en las ecuaciones siguientes, empleamos la aproximación de Tustin para discretizar este controlador. Luego, afinamos los parámetros del controlador mediante simulación. Finalmente, transferimos los parámetros a la planta, corrigiendo las discrepancias inherentes entre el modelo simulado y la planta real para minimizar los errores.
+Once the system was identified, we proceeded to select a controller. In this case, we opted for the PID controller in parallel configuration due to its ease of being tuned using practical methods without requiring complex calculations. As shown in the following equations, the Tustin approximation was used to discretize this controller. Then, the controller parameters were fine-tuned through simulation. Finally, the parameters were transferred to the plant, correcting the inherent discrepancies between the simulated model and the real plant to minimize errors.
 
 \begin{align}
 C(s) &= K_p + \frac{K_i}{s} + K_d s \label{eq:1} \\
@@ -132,47 +131,47 @@ u(k) &= \frac{(a + b + c)}{d}e(k) + \frac{2(b - c)}{d}e(k - 1) + \frac{(b + c - 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_4.png}}
-    \caption{Simulación del Sistema en lazo cerrado a entrada Escalón}
+    \caption{Closed-loop System Simulation to a Step Input}
     \label{fig:close_loop_response_simulation}
 \end{figure}
 
-La Figura~\ref{fig:close_loop_response_simulation} ilustra la simulación del sistema en lazo cerrado en respuesta a una entrada de tipo escalón. Esta simulación es crucial para evaluar y afinar el comportamiento del sistema controlado antes de implementarlo en la planta física. Proporciona una visión anticipada de cómo responderá el sistema real bajo control.
+Figure~\ref{fig:close_loop_response_simulation} illustrates the closed-loop system simulation in response to a step input. This simulation is crucial to evaluate and refine the behavior of the controlled system before implementing it on the physical plant. It provides an anticipated view of how the real system will respond under control.
 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_5.png}}
-    \caption{Calibración de los Parámetros del Controlador con la planta en funcionamiento}
+    \caption{Controller Parameter Calibration with the Plant in Operation}
     \label{fig:close_loop_pid_calibration}
 \end{figure}
-En la Figura~\ref{fig:close_loop_pid_calibration} se describe el proceso de calibración de los parámetros del controlador mientras la planta está en funcionamiento. Este paso crítico garantiza que el controlador se ajuste de manera óptima a las características y dinámicas específicas de la planta real.
+Figure~\ref{fig:close_loop_pid_calibration} describes the process of calibrating the controller parameters while the plant is in operation. This critical step ensures that the controller is optimally adjusted to the specific characteristics and dynamics of the real plant.
 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_6.png}}
-    \caption{Respuesta del Sistema en Lazo Cerrado a Entrada Sinodal con una Frecuencia de 0.05 Hz}
+    \caption{Closed-loop System Response to a Sinusoidal Input with a Frequency of 0.05 Hz}
     \label{fig:close_loop_sine_response}
 \end{figure}
 
-El análisis de los datos recopilados experimentalmente permiten observar que desfase de sistema desarrollado con respecto a una señal sinodal de 0.05 Hz es de 1.24° como se observa en la Figura~\ref{fig:close_loop_sine_response}.
+The analysis of the experimentally collected data shows that the phase lag of the developed system concerning a sinusoidal signal of 0.05 Hz is 1.24°, as observed in Figure~\ref{fig:close_loop_sine_response}.
 
 \begin{figure}[H]
     \centering
     \resizebox{0.6\textwidth}{!}{\includegraphics{images/Figure_7.png}}
-    \caption{Respuesta del Sistema en Lazo Cerrado a Entrada Escalón}
+    \caption{Closed-loop System Response to a Step Input}
     \label{fig:close_loop_step_response}
 \end{figure}
-Finalmente el analisis de la respuesta a escalón para un cambio de 20 RPM muestra un sobre impulso del 16.36\% tal y como se aprecia en la Figura~\ref{fig:close_loop_step_response}.
+Finally, the analysis of the step response for a change of 20 RPM shows an overshoot of 16.36\%, as seen in Figure~\ref{fig:close_loop_step_response}.
 
-\section{Conclusión}
-En este informe, se ha presentado la implementación de un controlador digital de bajo nivel para motores DC en el contexto de un laboratorio de ingeniería mecatrónica. A lo largo del trabajo, se han abordado varias etapas clave, desde la medición de la señal de entrada hasta la implementación y evaluación del controlador digital.
+\section{Conclusion}
+This report presented the implementation of a low-level digital controller for DC motors in the context of a mechatronics engineering laboratory. Several key stages have been addressed throughout the work, from the measurement of the input signal to the implementation and evaluation of the digital controller.
 
-El proceso experimental comenzó con la medición de la señal de entrada, que era una señal sinusoidal generada por un programa simulador de generador de señales analógicas. Luego, se procedió a la supervisión del módulo de modulación por ancho de pulsos (PWM) para asegurar su correcto funcionamiento. Posteriormente, se implementó el control de pulsos del motor DC, calculando el ciclo de trabajo del PWM en función de la señal de entrada y la dirección de rotación del motor.
+The experimental process began with the measurement of the input signal, which was a sinusoidal signal generated by an analog signal generator simulator program. Then, the pulse-width modulation (PWM) module's operation was monitored to ensure its correct functioning. Subsequently, the DC motor's pulse control was implemented, calculating the PWM duty cycle based on the input signal and the motor's rotation direction.
 
-En la segunda parte del laboratorio, se desarrolló un sistema de lazo abierto para la planta, obteniendo su respuesta en frecuencia y sus dinámicas. Luego, se diseñó y sintonizó un controlador PID en configuración paralela mediante simulación, utilizando el modelo de la planta. Estos parámetros se transfirieron a la planta real después de corregir las discrepancias entre el modelo y la planta real.
+In the second part of the laboratory, an open-loop system for the plant was developed, obtaining its frequency response and dynamics. Then, a PID controller in parallel configuration was designed and tuned through simulation using the plant model. These parameters were transferred to the real plant after correcting the discrepancies between the model and the real plant.
 
-Los resultados experimentales mostraron la respuesta del sistema en lazo cerrado a diferentes tipos de entrada, como señales sinusoidales y escalones. Se observó un desfase de sistema de 1.24° y un sobreimpulso del 16.36\% en la respuesta a escalón, lo que indica que el controlador digital logra un buen rendimiento en términos de seguimiento de referencia y estabilidad.
+The experimental results showed the closed-loop system's response to different types of inputs, such as sinusoidal signals and steps. A system phase lag of 1.24° and an overshoot of 16.36\% in the step response were observed, indicating that the digital controller achieves good performance in terms of reference tracking and stability.
 
-En resumen, este trabajo proporciona una visión detallada de la implementación de un controlador digital de bajo nivel para motores DC en un entorno de laboratorio de ingeniería mecatrónica. Se ha demostrado la importancia de la identificación del sistema, la sintonización del controlador y la corrección de las discrepancias entre el modelo y la planta real para lograr un rendimiento satisfactorio del sistema de control.
+In summary, this work provides a detailed view of the implementation of a low-level digital controller for DC motors in a mechatronics engineering laboratory environment. It has demonstrated the importance of system identification, controller tuning, and correcting discrepancies between the model and the real plant to achieve satisfactory control system performance.
 
 %\bibliographystyle{ieeetr}  
 %\bibliography{library}
