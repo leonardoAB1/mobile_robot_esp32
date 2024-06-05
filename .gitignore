@@ -5,7 +5,8 @@ build/
 components/
 
 # Ignore specific files
-CMakeLists.txt
 dependencies.lock
 sdkconfig
 sdkconfig.old
+find_large_file.sh
+git-filter-repo
