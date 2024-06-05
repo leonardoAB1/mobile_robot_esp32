@@ -12,6 +12,7 @@
 *.lof
 *.lot
 *.blg
+*.cls
 
 # Temporary files
 *~
