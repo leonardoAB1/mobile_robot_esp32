@@ -1,120 +1,106 @@
-# Mobile Robot Control System
+# Differential Drive Robot Control System
 
-This repository contains the source code and documentation for a Differential Robot Control System developed as part of the Mechatronics course at [UCB (Universidad Católica Boliviana)](https://www.scz.ucb.edu.bo). The project is designed to be used with the ESP32 DEVKIT V1 board.
+Closed-loop control for a two-wheel differential robot on an ESP32 running FreeRTOS: encoder processing, PID speed control, forward and inverse kinematics, odometry, and a WiFi HTTP API. Every controller was derived from system identification experiments on the real motors, not hand-tuned.
 
-## Table of Contents
-- [Mobile Robot Control System](#mobile-robot-control-system)
-  - [Table of Contents](#table-of-contents)
-  - [PWM in motor\_control.c](#pwm-in-motor_controlc)
-  - [PID Motor Controller](#pid-motor-controller)
-    - [Usage](#usage)
-  - [Forward Kinematics](#forward-kinematics)
-    - [Usage](#usage-1)
-    - [Detailed Description](#detailed-description)
-  - [Inverse Kinematics](#inverse-kinematics)
-    - [Usage](#usage-2)
-  - [Odometry](#odometry)
-  - [Overview](#overview)
-  - [Contributors](#contributors)
-  - [License](#license)
+![System identification: discrete model vs measured step response, with Bode plot](documentation/experiments/lab_02/M1_IDENTIFICACION_SISTEMA.png)
 
-## PWM in motor_control.c
+<!-- TODO: add short GIF of the robot driving -->
 
-The PWM control for the motor is implemented in the `motor_control.c` file. In this file, the functions `ledc_set_duty` and `ledc_update_duty` are used to set and update the motor's duty cycle. Additionally, a function is provided to calculate the duty cycle based on an angle, and methods are defined to get and set the motor angle.
+## Why this exists
 
-For more details, check the code in [`motor_control.c`](path/to/motor_control.c).
+Built for the Mechatronics course at [Universidad Católica Boliviana](https://www.scz.ucb.edu.bo), this project walks the full control-engineering loop on real hardware: identify the plant, design and simulate the controller, implement it on an RTOS, then measure how well reality matches the model. The repo keeps all of it, from firmware to the raw experiment data and analysis scripts.
 
-## PID Motor Controller
+## System architecture
 
-The PID motor controller is a fundamental part of the two-motor control functionality in a robot. It is implemented in the `task_utils.c` file, specifically in the `Motor1ControlTask` and `Motor2ControlTask` functions. These functions handle motor control and apply a PID controller to maintain the desired speeds.
+Six FreeRTOS tasks cooperate through queues, pinned across the ESP32's two cores:
 
-### Usage
+```mermaid
+flowchart LR
+    subgraph esp32 ["ESP32 DEVKIT V1 (FreeRTOS)"]
+        http["HTTP server<br/>references and telemetry"]
+        enc1["Encoder1/2<br/>ProcessingTask"]
+        pid["Motor1/2<br/>ControlTask<br/>EWMA filter + PID"]
+        fk["DirectKinematicsTask<br/>wheel speeds to v, w"]
+        odo["OdometryTask<br/>x, y, theta"]
+    end
+    encoders["Quadrature encoders<br/>(GPIO interrupts)"] --> enc1
+    enc1 -->|speed queues| pid
+    pid -->|"PWM (LEDC)"| hbridge["H-bridge"] --> motors["2x JGA25-370<br/>DC gearmotors"]
+    enc1 --> fk --> odo
+    http <--> pid
+```
 
-The process is developed as follows:
+- **Encoder tasks** count quadrature pulses via GPIO interrupts and hardware timers, and convert them to RPM.
+- **Motor control tasks** smooth the noisy speed signal with an EWMA filter, then run a PID loop (or open loop, selectable) with output saturation before writing the PWM duty cycle.
+- **Kinematics and odometry tasks** turn wheel speeds into robot velocity `(v, w)` and integrate pose `(x, y, theta)`.
 
-1. **Speed Reading**: The functions read the current motor speeds from a message queue.
+### HTTP API
 
-2. **Speed Filtering**: They apply an Exponential Weighted Moving Average (EWMA) filter to smooth the speed readings.
+The robot connects to WiFi on boot and exposes its control interface over HTTP, so it can be commanded and logged from any laptop:
 
-3. **Speed Control**: Depending on the selected control strategy (either open-loop or PID control), the functions calculate the duty cycle value to control the motors.
+| Endpoint | Purpose |
+|---|---|
+| `/status` | Health check |
+| `/reference1/set`, `/reference2/set` (and `/get`) | Per-wheel speed references |
+| `/encoder1/get`, `/encoder2/get` | Measured wheel speeds |
+| `/robot/speed/set`, `/robot/speed/get` | Body velocity `(v, w)`, converted to wheel references via inverse kinematics |
+| `/robot/distance/get`, `/robot/distance/reset` | Odometry readout |
 
-4. **PID Controller**: If using the PID controller, they calculate the error, apply PID control, and saturate the control signal as necessary.
+## Control design workflow
 
-5. **Value Logging**: They log the current values, including motor speed, desired reference, control signal, and error.
+The controllers came out of a measured, repeatable process. All scripts and raw data live in [`automation/`](automation/):
 
-6. **Motor Update**: Finally, they set the duty cycle for the motors according to the calculated signals and move accordingly.
+1. **Signal acquisition** ([`automation/lab_01/`](automation/lab_01/)): step and sine excitation over serial and WiFi, logging encoder response.
+2. **Filtering**: EWMA filter tuning to clean the encoder signal without adding excessive lag.
 
-These functions provide a solid foundation for implementing precise and efficient motor control, which is essential for the controlled movement of a robot.
+   ![Raw vs EWMA-filtered speed signal](automation/lab_01/results/images/Figure_2_ewma_filter_04.png)
 
-## Forward Kinematics
+3. **System identification** ([`automation/lab_02/`](automation/lab_02/)): fitting a discrete transfer function per motor from step-response data (MATLAB and Python), validated against measurements (figure at the top).
+4. **Controller simulation**: PID designed against the identified model before touching hardware.
 
-Forward kinematics is implemented in the `task_utils.c` file through the `DirectKinematicsTask`. This task plays a crucial role in calculating a mobile robot's linear and angular velocity based on its wheel speeds. These values are logged or sent as needed.
+   ![Simulated controller response](documentation/experiments/lab_02/M1_SIMULACION_CONTROLADOR.png)
 
-### Usage
+5. **Kinematics and odometry validation** ([`automation/lab_03/`](automation/lab_03/)): commanded vs measured trajectories, analyzed in a [Jupyter notebook](automation/lab_03/data/odometry_analysis.ipynb).
 
-To utilize this functionality, it is essential to provide the necessary parameters to the task, including the motor speed queues. The constants `WHEEL_DIAMETER` and `ROBOT_WIDTH` should also be configured according to the robot's specific dimensions. The task runs in a continuous loop, periodically processing motor speed data and updating the robot's speed state.
+## Repository layout
 
-### Detailed Description
+| Path | Contents |
+|---|---|
+| [`main/src/`](main/src/) | ESP-IDF firmware: [`motor_control/`](main/src/motor_control/), [`encoder/`](main/src/encoder/), [`task_utils/`](main/src/task_utils/) (FreeRTOS tasks), [`web_server/`](main/src/web_server/), [`http_handlers/`](main/src/http_handlers/), [`connect_wifi/`](main/src/connect_wifi/) |
+| [`automation/`](automation/) | Experiment scripts, raw data, and analysis (Python, MATLAB, Jupyter) |
+| [`documentation/CAD/`](documentation/CAD/) | SolidWorks parts and 3D-printable chassis files |
+| [`documentation/electronics/`](documentation/electronics/) | Pinouts, H-bridge and encoder references |
+| [`documentation/experiments/`](documentation/experiments/) | Result figures and lab photos |
 
-This code implements forward kinematics for a mobile robot, a calculation that relates the robot's wheel speeds to its real-world linear and angular velocity. The task operates as follows:
+## Hardware
 
-1. **Speed Reading**: The task reads the left and right wheel speeds in revolutions per minute (rpm) from the `motor1SpeedQueue` and `motor2SpeedQueue` message queues.
+- ESP32 DEVKIT V1 (dual-core, WiFi)
+- 2x JGA25-370 12 V DC gearmotors with quadrature encoders
+- Dual H-bridge motor driver
+- 3D-printed chassis and wheel mounts (SolidWorks sources and STL/3MF in [`documentation/CAD/`](documentation/CAD/))
 
-2. **Unit Conversion**: It converts the wheel speeds from rpm to
+## Build and flash
 
-radians per second (rad/s).
+Requires [ESP-IDF](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/).
 
-3. **Velocity Calculation**: It calculates the robot's linear and angular velocities using the wheel speeds and parameters like the wheel diameter (`WHEEL_DIAMETER`) and the robot width (`ROBOT_WIDTH`).
+```bash
+git clone https://github.com/leonardoAB1/mobile_robot_esp32.git
+cd mobile_robot_esp32
 
-4. **State Update**: It sets the robot's linear and angular velocity states.
+# set your WiFi credentials
+# edit main/src/config.h (WIFI_SSID, WIFI_PASSWORD)
 
-5. **Result Logging or Sending**: It logs or sends the results, including the robot's linear and angular velocity, for further monitoring or control.
-
-6. **Frequency Control**: The task loop runs with a controlled frequency, regulated by a 100 ms delay (`pdMS_TO_TICKS(100)`), to ensure consistent task execution and state updates.
-
-This approach provides an effective way to obtain the forward kinematics of a mobile robot, which is essential for a wide variety of robotics applications.
-
-## Inverse Kinematics
-
-Inverse kinematics, a crucial part of mobile robot control, is implemented in the `http_handlers.c` file, specifically in the `handle_set_robot_speed` function. This function handles requests to update the robot's speed and calculates the left and right wheel speeds using inverse kinematics equations.
-
-### Usage
-
-The process is as follows:
-
-1. **Request Reception**: The function checks that the request is of type POST.
-
-2. **JSON Data Extraction**: It then extracts JSON data from the request, including the robot speed (`robot_speed`) and the robot angle (`robot_angle`).
-
-3. **Wheel Speed Calculation**: Using inverse kinematics, the function calculates the left and right wheel speeds in RPM based on the robot's speed and angle.
-
-4. **Speed Limiting**: It applies speed saturation to limit the wheel speeds to a maximum of 200 RPM.
-
-5. **Setting References**: It sets the references for the left and right motor speeds according to the selected control strategy.
-
-6. **Logging Updated Values**: It logs the updated motor speed values.
-
-7. **Response**: Finally, it sends a response indicating that the robot's speed has been successfully updated.
-
-This code provides a robust foundation for implementing inverse kinematics in mobile robot control applications, which is essential for achieving precise and efficient movement control.
-
-## Odometry
-
-The odometry functionality is implemented in the `OdometryTask` task in the `task_utils.c` file. In this task, the robot's positions (x, y) and orientation (theta) are calculated based on the motor speeds and wheel dimensions. These calculations are performed using the robot's kinematic equations and motor speeds.
-
-For more details, check the code in [`task_utils.c`](path/to/task_utils.c).
-
-## Overview
-
-The Differential Robot Control System is designed to provide control and monitoring capabilities for a mobile robot. It includes features such as Wi-Fi connectivity, a web server for remote control and monitoring, encoder initialization, GPIO pin management, timer initialization, interrupt handling, and motor control. This codebase serves as a foundation for building and customizing mobile robot projects.
+idf.py set-target esp32
+idf.py build flash monitor
+```
 
 ## Contributors
 
 - [Leonardo Acha Boiano](https://github.com/leonardoAB1)
 - [Bruno Ramiro Rejas](https://github.com/BrunoRRM712)
-- [Gonzalo Peralta]()
+- Gonzalo Peralta
 - [Andrés Ayala](https://github.com/mecatrono)
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT
