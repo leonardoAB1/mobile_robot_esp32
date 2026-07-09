@@ -1,6 +1,6 @@
 # Differential Drive Robot Control System
 
-Closed-loop control for a two-wheel differential robot on an ESP32 running FreeRTOS: encoder processing, PID speed control, forward and inverse kinematics, odometry, and a WiFi HTTP API. Every controller was derived from system identification experiments on the real motors, not hand-tuned.
+Closed-loop control for a two-wheel differential robot on an ESP32 running FreeRTOS: encoder processing, PID speed control, forward and inverse kinematics, odometry, and a WiFi HTTP API. Every controller was derived from system identification experiments on the motors.
 
 ![System identification: discrete model vs measured step response, with Bode plot](documentation/experiments/lab_02/M1_IDENTIFICACION_SISTEMA.png)
 
@@ -8,7 +8,7 @@ Closed-loop control for a two-wheel differential robot on an ESP32 running FreeR
 
 ## Why this exists
 
-Built for the Mechatronics course at [Universidad Católica Boliviana](https://www.scz.ucb.edu.bo), this project walks the full control-engineering loop on real hardware: identify the plant, design and simulate the controller, implement it on an RTOS, then measure how well reality matches the model. The repo keeps all of it, from firmware to the raw experiment data and analysis scripts.
+Built for the Robotics class at [Universidad Católica Boliviana](https://www.scz.ucb.edu.bo), this project walks the full control-engineering loop on real hardware: identify the plant, design and simulate the controller, implement it on an RTOS, then measure how well reality matches the model. The repo keeps all of it, from firmware to the raw experiment data and analysis scripts.
 
 ## System architecture
 
